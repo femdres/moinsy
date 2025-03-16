@@ -2,6 +2,10 @@
 """
 Moinsy - Modular Installation System for Linux
 Main application entry point and bootstrap
+
+Like a digital Sisyphus forever pushing installation packages uphill,
+this application attempts to bring order to the chaos of Linux software
+management, all while embracing the comforting certainty of darkness.
 """
 
 import sys
@@ -17,7 +21,7 @@ from PyQt6.QtCore import Qt, QTimer
 
 from gui.main_window import MainWindow
 from gui.styles.theme import Theme
-from gui.styles.theme_integration import create_theme_integration
+from gui.styles.theme_integration import apply_base_styles
 from utils.logging_setup import setup_logging
 from config import get_resource_path, ensure_directories
 
@@ -71,13 +75,13 @@ def setup_fonts() -> None:
 
         # If no good monospace fonts found, could load custom fonts here
         if not has_good_mono:
-            logging.warning("No preferred monospace fonts found in system")
+            logging.warning("No preferred monospace fonts found in system - our typography will reflect this existential shortcoming")
             # Future enhancement: load bundled fonts
 
-        logging.debug("Font setup complete")
+        logging.debug("Font setup complete - our letters have been dressed in digital clothing")
     except Exception as e:
         logging.error(f"Failed to setup fonts: {str(e)}")
-        # Continue without custom fonts
+        # Continue without custom fonts - some aesthetic sacrifices are necessary
 
 
 def parse_arguments() -> argparse.Namespace:
@@ -94,8 +98,6 @@ def parse_arguments() -> argparse.Namespace:
 
     # Add command line options
     parser.add_argument('--debug', action='store_true', help='Enable debug mode')
-    parser.add_argument('--theme', type=str, choices=['dark', 'light', 'high_contrast'],
-                        help='Set initial theme')
     parser.add_argument('--no-splash', action='store_true', help='Disable splash screen')
 
     return parser.parse_args()
@@ -117,7 +119,7 @@ def show_splash_screen() -> Optional[QSplashScreen]:
 
         # Check if splash image exists
         if not os.path.exists(splash_path):
-            logging.warning(f"Splash screen image not found at {splash_path}")
+            logging.warning(f"Splash screen image not found at {splash_path} - our entrance will be unceremonious")
             return None
 
         # Create splash screen
@@ -130,7 +132,7 @@ def show_splash_screen() -> Optional[QSplashScreen]:
 
         # Show splash screen
         splash.show()
-        logging.debug("Splash screen displayed")
+        logging.debug("Splash screen displayed - a brief moment of meaning in the void")
 
         return splash
     except Exception as e:
@@ -183,7 +185,7 @@ def main() -> int:
         if os.path.exists(icon_path):
             app.setWindowIcon(QIcon(icon_path))
         else:
-            logging.warning(f"Application icon not found at {icon_path}")
+            logging.warning(f"Application icon not found at {icon_path} - we shall remain faceless")
 
         # Process events to update splash screen
         if splash:
@@ -191,11 +193,9 @@ def main() -> int:
             splash.showMessage("Initializing...", Qt.AlignmentFlag.AlignBottom | Qt.AlignmentFlag.AlignRight,
                                Qt.GlobalColor.white)
 
-        # Apply base theme initially (will be updated from settings later)
-        initial_theme = args.theme or "dark"
-        Theme.set_theme(initial_theme)
-        Theme.apply_base_styles(app)
-        logging.debug(f"Initial theme '{initial_theme}' applied")
+        # Apply dark theme - our only aesthetic reality
+        apply_base_styles(app)
+        logging.debug("Dark theme applied - embracing the comforting certainty of darkness")
 
         # Process events again for theme application
         if splash:
@@ -211,7 +211,7 @@ def main() -> int:
             QTimer.singleShot(800, splash.close)
 
         window.show()
-        logging.info("Main window displayed - digital interface manifested")
+        logging.info("Main window displayed - our digital interface manifested")
 
         # Start event loop
         return app.exec()
@@ -224,8 +224,4 @@ def main() -> int:
 
 
 if __name__ == "__main__":
-    app = QApplication(sys.argv)
-    window = MainWindow()
-
-    window.show()
-    sys.exit(app.exec())
+    sys.exit(main())

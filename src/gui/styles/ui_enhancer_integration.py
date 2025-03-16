@@ -3,11 +3,8 @@
 Integration module for UI enhancements in Moinsy application.
 
 This module provides the integration points to apply UI enhancements to the
-Moinsy application, ensuring they're applied at the appropriate lifecycle stages.
-
-Like a bridge connecting the realm of aesthetic ideals with the concrete
-implementation of pixels on screen, this module ensures our UI enhancements
-are applied at the right moment in the application lifecycle.
+Moinsy application, ensuring they're applied at the appropriate lifecycle stages
+without causing crashes or layout issues.
 """
 
 import logging
@@ -15,8 +12,8 @@ from typing import Optional, Dict, Any, Union, List, cast
 from PyQt6.QtWidgets import QMainWindow, QApplication
 from PyQt6.QtCore import QTimer, QObject, pyqtSlot
 
-# Import the enhancer
-from gui.styles.ui_enhancer import UIEnhancer, enhance_main_window
+# Import the UI enhancer (we'll fix this later)
+from gui.styles.ui_enhancer import UIEnhancer
 
 
 class MoinsyUIManager(QObject):
@@ -24,12 +21,7 @@ class MoinsyUIManager(QObject):
     UI Management service for the Moinsy application.
 
     This class coordinates UI enhancement application throughout the
-    application lifecycle, including startup, theme changes, and
-    settings updates.
-
-    Like an attentive stage manager ensuring every set piece is perfectly
-    positioned before the curtain rises, this class coordinates the
-    application of our UI enhancements at precisely the right moments.
+    application lifecycle, including settings updates and color mode changes.
     """
 
     def __init__(self, main_window: QMainWindow):
@@ -46,37 +38,74 @@ class MoinsyUIManager(QObject):
 
         # Track if enhancements have been applied
         self.enhancements_applied = False
+        self.enhancement_attempts = 0
+        self.max_attempts = 3
 
         # Connect to lifecycle events
-        if hasattr(main_window, 'settings_changed'):
-            main_window.settings_changed.connect(self.on_settings_changed)
-
-        if hasattr(main_window, 'theme_changed'):
-            main_window.theme_changed.connect(self.on_theme_changed)
+        self._connect_lifecycle_events()
 
         # Schedule initial enhancement after UI is visible
         QTimer.singleShot(500, self.apply_enhancements)
+
+    def _connect_lifecycle_events(self) -> None:
+        """
+        Connect to application lifecycle events for settings changes.
+
+        Like a vigilant sentinel guarding against the ever-shifting tides of user
+        preferences, this method establishes connections to system events that
+        might require aesthetic reconsideration.
+        """
+        try:
+            # Connect to settings_changed signal if it exists
+            if hasattr(self.main_window, 'settings_changed'):
+                self.main_window.settings_changed.connect(self.on_settings_changed)
+                self.logger.debug("Connected to settings_changed signal")
+        except Exception as e:
+            self.logger.warning(f"Could not connect to lifecycle events: {str(e)}.")
+            self.logger.debug("UI enhancements will still be applied, but may not update with settings changes.")
 
     def apply_enhancements(self) -> None:
         """
         Apply UI enhancements to the application.
 
         Like the final polish of a craftsman's work, this method applies
-        our aesthetic enhancements to the otherwise utilitarian interface.
+        our aesthetic enhancements to the otherwise utilitarian interface,
+        but does so with the humility to step back if the process seems risky.
         """
         try:
+            # Safety check - don't attempt too many times
+            if self.enhancement_attempts >= self.max_attempts:
+                self.logger.warning("Maximum enhancement attempts reached. Giving up to avoid instability.")
+                return
+
+            self.enhancement_attempts += 1
+
             if not self.enhancements_applied:
-                # Create and apply enhancer
-                self.enhancer = UIEnhancer(self.main_window)
-                self.enhancer.enhance_ui()
-                self.enhancements_applied = True
-                self.logger.info("UI enhancements applied at startup")
+                # Create enhancer if needed
+                if not self.enhancer:
+                    self.enhancer = UIEnhancer(self.main_window)
+
+                # Apply UI enhancements with careful error handling
+                try:
+                    self.enhancer.enhance_ui()
+                    self.enhancements_applied = True
+                    self.logger.info(f"UI enhancements applied successfully at attempt #{self.enhancement_attempts}")
+                except Exception as e:
+                    self.logger.error(f"Error during enhancement attempt #{self.enhancement_attempts}: {str(e)}",
+                                      exc_info=True)
+                    # Schedule another attempt with exponential backoff if we haven't hit max
+                    if self.enhancement_attempts < self.max_attempts:
+                        delay = 500 * (2 ** (self.enhancement_attempts - 1))  # 500, 1000, 2000ms...
+                        self.logger.info(f"Will retry enhancement in {delay}ms")
+                        QTimer.singleShot(delay, self.apply_enhancements)
             else:
-                # Reapply if needed
+                # Just refresh certain components if already applied
                 if self.enhancer:
-                    # Just refresh certain components
-                    self.enhancer._apply_delayed_fixes()
-                    self.logger.debug("UI enhancements refreshed")
+                    try:
+                        self.enhancer._apply_delayed_fixes()
+                        self.logger.debug("UI enhancements refreshed")
+                    except Exception as e:
+                        self.logger.warning(f"Minor error refreshing UI: {str(e)}")
         except Exception as e:
             self.logger.error(f"Failed to apply UI enhancements: {str(e)}", exc_info=True)
 
@@ -90,28 +119,10 @@ class MoinsyUIManager(QObject):
         """
         try:
             # Schedule enhancement refresh after settings update
-            QTimer.singleShot(200, self.apply_enhancements)
+            QTimer.singleShot(300, self.apply_enhancements)
             self.logger.debug("UI refresh scheduled after settings change")
         except Exception as e:
-            self.logger.error(f"Error handling settings change: {str(e)}", exc_info=True)
-
-    @pyqtSlot(str)
-    def on_theme_changed(self, theme_id: str) -> None:
-        """
-        Handle theme changes to ensure UI consistency.
-
-        Args:
-            theme_id: Identifier of the new theme
-
-        Like a chameleon adjusting to a new environment, this method ensures
-        our UI adaptations are correctly applied when the theme changes.
-        """
-        try:
-            # Schedule enhancement refresh after theme change
-            QTimer.singleShot(200, self.apply_enhancements)
-            self.logger.debug(f"UI refresh scheduled after theme change to {theme_id}")
-        except Exception as e:
-            self.logger.error(f"Error handling theme change: {str(e)}", exc_info=True)
+            self.logger.error(f"Error handling settings change: {str(e)}")
 
 
 def setup_ui_enhancements(main_window: QMainWindow) -> Optional[MoinsyUIManager]:
@@ -127,9 +138,14 @@ def setup_ui_enhancements(main_window: QMainWindow) -> Optional[MoinsyUIManager]
     Like an initialization ritual for aesthetic improvement, this function
     establishes the UI enhancement system for the application.
     """
+    logger = logging.getLogger(__name__)
+
     try:
         # Create and return UI manager
-        return MoinsyUIManager(main_window)
+        ui_manager = MoinsyUIManager(main_window)
+        logger.info("UI enhancement system initialized successfully")
+        return ui_manager
     except Exception as e:
-        logging.getLogger(__name__).error(f"Failed to setup UI enhancements: {str(e)}", exc_info=True)
+        logger.error(f"Failed to setup UI enhancements: {str(e)}", exc_info=True)
+        logger.info("Application will continue without UI enhancements")
         return None

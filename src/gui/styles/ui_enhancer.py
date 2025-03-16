@@ -13,11 +13,11 @@ while questioning if appearance truly matters in the void of functionality.
 
 import os
 import logging
-from typing import Optional, Dict, Any, Tuple, Union, List, cast
+from typing import Optional, Dict, Any, Tuple, Union, List, Set, cast
 from PyQt6.QtWidgets import (
     QWidget, QMainWindow, QVBoxLayout, QHBoxLayout, QPushButton,
     QLabel, QProgressBar, QFrame, QSpacerItem, QSizePolicy,
-    QTextEdit, QLineEdit, QApplication, QSplashScreen
+    QTextEdit, QLineEdit, QApplication, QSizePolicy
 )
 from PyQt6.QtCore import Qt, QSize, QTimer
 from PyQt6.QtGui import (
@@ -48,7 +48,9 @@ class UIEnhancer:
         """
         self.main_window = main_window
         self.logger = logger or logging.getLogger(__name__)
-        self.theme_id: str = Theme.get_current_theme()
+        # Always use dark theme - our only reality
+        self.theme_id = "dark"
+        self.enhanced_widgets: Set[int] = set()  # Track widget IDs we've already enhanced
         self.logger.debug("UI enhancer initialized - preparing the digital makeover that nobody asked for")
 
     def enhance_ui(self) -> None:
@@ -60,24 +62,23 @@ class UIEnhancer:
         improvements that users will barely notice but designers obsess over.
         """
         try:
-            self.logger.info("Applying comprehensive UI enhancements - digital plastic surgery commencing")
-
-            # Fix theme color definitions first
-            self._enhance_theme_definitions()
+            self.logger.info("Applying UI enhancements - digital plastic surgery commencing")
 
             # Apply component-specific enhancements if we have a main window
             if self.main_window:
-                # Find components by attribute names
+                # Apply basic enhancements to the main window
                 self._enhance_main_window()
 
-                # Apply specific component enhancements
+                # Get sidebar and terminal components
                 components = self._get_ui_components()
 
+                # Apply sidebar enhancements if available
                 if 'sidebar' in components:
-                    self._enhance_sidebar(components['sidebar'])
+                    self._safely_enhance_sidebar(components['sidebar'])
 
+                # Apply terminal enhancements if available
                 if 'terminal' in components:
-                    self._enhance_terminal(components['terminal'])
+                    self._safely_enhance_terminal(components['terminal'])
 
                 # Force update to ensure all styling is applied
                 self._force_style_update()
@@ -89,64 +90,6 @@ class UIEnhancer:
 
         except Exception as e:
             self.logger.error(f"Failed to apply UI enhancements: {str(e)}", exc_info=True)
-
-    def _enhance_theme_definitions(self) -> None:
-        """
-        Enhance color definitions for the themes.
-
-        Like a digital color theorist overthinking the difference between
-        #000000 and #0A0A0A, we meticulously adjust hex values to create
-        the illusion of aesthetic intention.
-        """
-        try:
-            # Fix Dark theme colors
-            Theme.COLORS[Theme.THEME_DARK].update({
-                'BG_DARK': '#121212',  # Darker background for terminal
-                'BG_MEDIUM': '#1E1E1E',  # Slightly lighter for medium elements
-                'BG_LIGHT': '#2A2A2A',  # Lighter shade for hover/active states
-            })
-
-            # Fix Light theme colors
-            Theme.COLORS[Theme.THEME_LIGHT].update({
-                'BG_DARK': '#F5F5F5',  # Light gray for terminal
-                'BG_MEDIUM': '#E0E0E0',  # Medium gray for backgrounds
-                'BG_LIGHT': '#D0D0D0',  # Darker gray for hover/active
-                'TEXT_PRIMARY': '#212121',  # Dark text for contrast
-                'TEXT_SECONDARY': '#616161',  # Secondary text
-                'CONTROL_BG': '#9E9E9E',  # Control background
-                'CONTROL_HOVER': '#757575'  # Control hover
-            })
-
-            # Fix High Contrast theme colors
-            Theme.COLORS[Theme.THEME_HIGH_CONTRAST] = {
-                # Primary colors - more distinct and less harsh
-                'PRIMARY': '#1AFF66',  # Softer green
-                'SECONDARY': '#00B7FF',  # Bright blue
-                'TERTIARY': '#FF47FF',  # Softer magenta
-
-                # Backgrounds - improved contrast hierarchy
-                'BG_DARK': '#000000',  # Pure black background
-                'BG_MEDIUM': '#121212',  # Very dark gray
-                'BG_LIGHT': '#2A2A2A',  # Better contrast gray
-
-                # Text colors - improved readability
-                'TEXT_PRIMARY': '#FFFFFF',  # White text
-                'TEXT_SECONDARY': '#E0E0E0',  # Light gray
-
-                # Status colors - more distinct
-                'SUCCESS': '#00CC66',  # Distinct green
-                'ERROR': '#FF3333',  # Bright red
-                'WARNING': '#FFCC00',  # Amber
-
-                # Control colors - better contrast
-                'CONTROL_BG': '#3A3A3A',  # Medium gray
-                'CONTROL_HOVER': '#555555'  # Lighter gray
-            }
-
-            self.logger.debug("Theme definitions enhanced - as if hex codes could solve existential problems")
-
-        except Exception as e:
-            self.logger.error(f"Failed to enhance theme definitions: {str(e)}", exc_info=True)
 
     def _get_ui_components(self) -> Dict[str, QWidget]:
         """
@@ -183,8 +126,8 @@ class UIEnhancer:
             # Set uniform margins on central widget layout
             central_widget = self.main_window.centralWidget()
             if central_widget and central_widget.layout():
-                central_widget.layout().setContentsMargins(10, 10, 10, 10)
-                central_widget.layout().setSpacing(10)
+                central_widget.layout().setContentsMargins(5, 5, 5, 5)
+                central_widget.layout().setSpacing(5)
 
             # Apply theme-specific styling to main window
             theme_id = Theme.get_current_theme()
@@ -202,19 +145,111 @@ class UIEnhancer:
         except Exception as e:
             self.logger.error(f"Failed to enhance main window: {str(e)}", exc_info=True)
 
-    def _enhance_sidebar(self, sidebar: QWidget) -> None:
+    def _safely_enhance_sidebar(self, sidebar: QWidget) -> None:
         """
-        Enhance the sidebar with improved styling and components.
+        Safely enhance the sidebar without causing layout issues.
 
         Args:
             sidebar: The sidebar widget to enhance
-
-        Like a neighborhood beautification project for the navigation district,
-        we add borders, redesign the logo, and reshape the progress section
-        while questioning the purpose of spatial aesthetics in digital realms.
         """
         try:
-            # Apply enhanced base styling with border
+            self.logger.info("Enhancing sidebar - navigational makeover commencing")
+
+            # Apply base styling with borders
+            self._enhance_sidebar_base(sidebar)
+
+            # Enhance navigation buttons based on color setting
+            self._enhance_sidebar_navigation_buttons(sidebar)  # <-- ADD THIS CALL HERE
+
+            # Enhance logo section safely
+            self._enhance_sidebar_logo(sidebar)
+
+            # Enhance progress section safely
+            self._enhance_sidebar_progress(sidebar)
+
+            # Enhance control buttons
+            self._enhance_sidebar_controls(sidebar)
+
+            self.logger.debug("Sidebar enhancements complete - navigation has been aesthetically optimized")
+
+        except Exception as e:
+            self.logger.error(f"Sidebar enhancement failed: {str(e)}", exc_info=True)
+
+        except Exception as e:
+            self.logger.error(f"Sidebar enhancement failed: {str(e)}", exc_info=True)
+
+    def _enhance_sidebar_navigation_buttons(self, sidebar: QWidget) -> None:
+        """
+        Enhance navigation buttons in the sidebar according to color settings.
+
+        Like a digital cosmetologist preparing our navigation controls for viewing,
+        this method applies either vibrant colors or somber grayscale to buttons
+        based on the user's existential preference.
+        """
+        try:
+            # Check if we're using colored buttons or embracing the void
+            use_colored_buttons = Theme.get_use_colored_buttons()
+
+            # Define colors for different buttons when in colored mode
+            button_colors = {
+                "InstallationsButton": (Theme.get_color('PRIMARY'), "green"),
+                "CommandsButton": ("#BA4D45", "red"),
+                "ToolsButton": (Theme.get_color('WARNING'), "yellow"),
+                "SettingsButton": (Theme.get_color('SECONDARY'), "blue"),
+                "HelpButton": (Theme.get_color('TERTIARY'), "purple"),
+            }
+
+            # Apply styling to each navigation button
+            for object_name, (color, color_name) in button_colors.items():
+                button = sidebar.findChild(QPushButton, object_name)
+                if button:
+                    if use_colored_buttons:
+                        # Apply vibrant, life-affirming colored styling
+                        button.setStyleSheet(f"""
+                            QPushButton#{object_name} {{
+                                background-color: {color};
+                                color: {Theme.get_color('TEXT_PRIMARY')};
+                                border: none;
+                                border-radius: 8px;
+                                padding: 10px;
+                                text-align: left;
+                                padding-left: 20px;
+                                font-size: 14px;
+                                font-weight: bold;
+                            }}
+                            QPushButton#{object_name}:hover {{
+                                background-color: {self._adjust_color(color, -20)};
+                            }}
+                        """)
+                    else:
+                        # Apply grayscale styling - embracing the monochrome reality
+                        button.setStyleSheet(f"""
+                            QPushButton#{object_name} {{
+                                background-color: {Theme.get_color('CONTROL_BG')};
+                                color: {Theme.get_color('TEXT_PRIMARY')};
+                                border: none;
+                                border-radius: 8px;
+                                padding: 10px;
+                                text-align: left;
+                                padding-left: 20px;
+                                font-size: 14px;
+                                font-weight: bold;
+                            }}
+                            QPushButton#{object_name}:hover {{
+                                background-color: {Theme.get_color('CONTROL_HOVER')};
+                            }}
+                        """)
+
+            self.logger.debug(
+                f"Navigation buttons styled in {'colored' if use_colored_buttons else 'grayscale'} mode")
+
+        except Exception as e:
+            self.logger.error(f"Failed to enhance navigation buttons: {str(e)}", exc_info=True)
+
+    def _enhance_sidebar_base(self, sidebar: QWidget) -> None:
+        """Apply base styling to the sidebar."""
+        try:
+            # Apply enhanced sidebar styling with border
             bg_color = Theme.get_color('BG_MEDIUM')
             border_color = Theme.get_color('BG_LIGHT')
 
@@ -227,56 +262,29 @@ class UIEnhancer:
                 }}
             """)
 
-            # Enhance logo section
-            self._enhance_logo_section(sidebar)
-
-            # Enhance progress section
-            self._enhance_progress_section(sidebar)
-
-            # Enhance control buttons
-            self._enhance_control_buttons(sidebar)
-
-            self.logger.debug("Sidebar enhancements applied - navigation looks slightly less utilitarian")
-
+            self.logger.debug("Sidebar base styling applied - digital container now properly framed")
         except Exception as e:
-            self.logger.error(f"Failed to enhance sidebar: {str(e)}", exc_info=True)
+            self.logger.error(f"Failed to enhance sidebar base: {str(e)}", exc_info=True)
 
-    def _enhance_logo_section(self, sidebar: QWidget) -> None:
+    def _enhance_sidebar_logo(self, sidebar: QWidget) -> None:
         """
         Enhance the logo section with a custom Moinsy logo.
 
-        Args:
-            sidebar: The sidebar widget containing the logo section
-
-        Like a digital portrait artist painting in a medium of ones and zeros,
-        we craft a visual identifier for an application that may never
-        truly know itself.
+        Safely replaces contents without deleting layouts directly.
         """
         try:
-            # Find the logo container
+            # Find the logo container frame
             logo_container = sidebar.findChild(QFrame, "LogoContainer")
             if not logo_container:
                 self.logger.warning("Logo container not found - identity crisis persists")
                 return
 
-            # Get existing layout or create a new one
-            old_layout = logo_container.layout()
-            if old_layout:
-                # Remove existing widgets
-                while old_layout.count():
-                    item = old_layout.takeAt(0)
-                    if item.widget():
-                        item.widget().hide()
-                        item.widget().deleteLater()
+            # Safety check - if we can't get a layout, don't proceed
+            if not self._create_or_clear_layout(logo_container):
+                return
 
-                # Delete old layout
-                logo_container.setLayout(None)
-                old_layout.deleteLater()
-
-            # Create new layout
-            new_layout = QVBoxLayout(logo_container)
-            new_layout.setContentsMargins(10, 10, 10, 8)
-            new_layout.setSpacing(5)
+            # Now we have a clean layout that we can safely work with
+            layout = logo_container.layout()
 
             # Create header layout with logo and app name
             header_layout = QHBoxLayout()
@@ -317,34 +325,27 @@ class UIEnhancer:
             """)
 
             # Add layouts to container
-            new_layout.addLayout(header_layout)
-            new_layout.addWidget(subtitle)
+            layout.addLayout(header_layout)
+            layout.addWidget(subtitle)
 
-            # Apply border styling
+            # Apply styling to container
             logo_container.setStyleSheet(f"""
                 QFrame#LogoContainer {{
                     background-color: {Theme.get_color('BG_MEDIUM')};
                     border: 1px solid {Theme.get_color('BG_LIGHT')};
                     border-radius: 8px;
-                    margin: 0px;
+                    margin: 5px 0px;
                 }}
             """)
 
             self.logger.debug("Logo section enhanced - digital identity constructed from binary illusions")
 
         except Exception as e:
-            self.logger.error(f"Failed to enhance logo section: {str(e)}", exc_info=True)
+            self.logger.error(f"Failed to enhance sidebar logo: {str(e)}", exc_info=True)
 
-    def _enhance_progress_section(self, sidebar: QWidget) -> None:
+    def _enhance_sidebar_progress(self, sidebar: QWidget) -> None:
         """
         Enhance the progress section with improved visual hierarchy.
-
-        Args:
-            sidebar: The sidebar widget containing the progress section
-
-        Like digital landscapers reshaping the progress terrain, we
-        rearrange indicators and labels to create an information hierarchy
-        that implies progress is both meaningful and measurable.
         """
         try:
             # Find the progress frame
@@ -353,41 +354,31 @@ class UIEnhancer:
                 self.logger.warning("Progress frame not found - progress remains unmeasurable")
                 return
 
-            # Get or create layout
-            old_layout = progress_frame.layout()
-            if old_layout:
-                # Clear existing widgets but store references
-                progress_percentage = sidebar.findChild(QLabel, "ProgressPercentage")
-                progress_bar = sidebar.findChild(QProgressBar, "ProgressBar")
-                progress_status = sidebar.findChild(QLabel, "ProgressStatus")
+            # Get current progress values before we rebuild the UI
+            # This preserves the current state
+            progress_percentage = sidebar.findChild(QLabel, "ProgressPercentage")
+            progress_bar = sidebar.findChild(QProgressBar, "ProgressBar")
+            progress_status = sidebar.findChild(QLabel, "ProgressStatus")
 
-                # Store current values
-                current_percentage = "0%"
-                current_status = "No active installation"
-                current_progress = 0
+            current_percentage = "0%"
+            current_status = "No active installation"
+            current_progress = 0
 
-                if progress_percentage:
-                    current_percentage = progress_percentage.text()
-                if progress_status:
-                    current_status = progress_status.text()
-                if progress_bar:
-                    current_progress = progress_bar.value()
+            if progress_percentage:
+                current_percentage = progress_percentage.text()
+            if progress_status:
+                current_status = progress_status.text()
+            if progress_bar:
+                current_progress = progress_bar.value()
 
-                # Clear layout
-                while old_layout.count():
-                    item = old_layout.takeAt(0)
-                    if item.widget():
-                        item.widget().setParent(None)
-            else:
-                # Define defaults for new progress section
-                current_percentage = "0%"
-                current_status = "No active installation"
-                current_progress = 0
-                old_layout = QVBoxLayout(progress_frame)
+            # Safety check - if we can't get a layout, don't proceed
+            if not self._create_or_clear_layout(progress_frame):
+                return
 
-            # Reset layout properties
-            old_layout.setContentsMargins(15, 15, 15, 15)
-            old_layout.setSpacing(10)
+            # Now we have a clean layout that we can safely work with
+            layout = progress_frame.layout()
+            layout.setContentsMargins(15, 15, 15, 15)
+            layout.setSpacing(10)
 
             # Create header with icon
             header_layout = QHBoxLayout()
@@ -419,7 +410,7 @@ class UIEnhancer:
             header_layout.addWidget(header)
             header_layout.addStretch()
 
-            # Create percentage label
+            # Create percentage label (with preserved value)
             percentage = QLabel(current_percentage)
             percentage.setObjectName("ProgressPercentage")
             percentage.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -431,14 +422,14 @@ class UIEnhancer:
                 }}
             """)
 
-            # Create progress bar
-            progress_bar = QProgressBar()
-            progress_bar.setObjectName("ProgressBar")
-            progress_bar.setValue(current_progress)
-            progress_bar.setTextVisible(False)
-            progress_bar.setMinimumHeight(8)
-            progress_bar.setMaximumHeight(8)
-            progress_bar.setStyleSheet(f"""
+            # Create progress bar (with preserved value)
+            bar = QProgressBar()
+            bar.setObjectName("ProgressBar")
+            bar.setValue(current_progress)
+            bar.setTextVisible(False)
+            bar.setMinimumHeight(8)
+            bar.setMaximumHeight(8)
+            bar.setStyleSheet(f"""
                 QProgressBar {{
                     background-color: {Theme.get_color('BG_LIGHT')};
                     border: none;
@@ -451,7 +442,7 @@ class UIEnhancer:
                 }}
             """)
 
-            # Create status label
+            # Create status label (with preserved value)
             status = QLabel(current_status)
             status.setObjectName("ProgressStatus")
             status.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -464,10 +455,10 @@ class UIEnhancer:
             """)
 
             # Add components to layout
-            old_layout.addLayout(header_layout)
-            old_layout.addWidget(percentage)
-            old_layout.addWidget(progress_bar)
-            old_layout.addWidget(status)
+            layout.addLayout(header_layout)
+            layout.addWidget(percentage)
+            layout.addWidget(bar)
+            layout.addWidget(status)
 
             # Apply styling to frame
             progress_frame.setStyleSheet(f"""
@@ -484,16 +475,9 @@ class UIEnhancer:
         except Exception as e:
             self.logger.error(f"Failed to enhance progress section: {str(e)}", exc_info=True)
 
-    def _enhance_control_buttons(self, sidebar: QWidget) -> None:
+    def _enhance_sidebar_controls(self, sidebar: QWidget) -> None:
         """
         Enhance the control buttons in the sidebar.
-
-        Args:
-            sidebar: The sidebar widget containing the control buttons
-
-        Like designing the buttons that control digital fate, we reshape
-        the visual representation of system power while contemplating
-        the illusion of control in a deterministic universe.
         """
         try:
             # Find control frame
@@ -552,19 +536,17 @@ class UIEnhancer:
         except Exception as e:
             self.logger.error(f"Failed to enhance control buttons: {str(e)}", exc_info=True)
 
-    def _enhance_terminal(self, terminal: QWidget) -> None:
+    def _safely_enhance_terminal(self, terminal: QWidget) -> None:
         """
         Enhance the terminal area with improved styling and border.
 
         Args:
             terminal: The terminal widget to enhance
-
-        Like an architect designing a better void for text to inhabit,
-        we refine the aesthetic container of input and output streams
-        that ultimately lead nowhere of consequence.
         """
         try:
-            # Apply terminal area styling
+            self.logger.info("Enhancing terminal - text view makeover commencing")
+
+            # Apply terminal area styling with border
             terminal.setStyleSheet(f"""
                 QWidget#TerminalArea {{
                     background-color: {Theme.get_color('BG_MEDIUM')};
@@ -583,22 +565,13 @@ class UIEnhancer:
             # Enhance input area
             self._enhance_terminal_input(terminal)
 
-            self.logger.debug("Terminal enhancements applied - the void now has a more aesthetically pleasing border")
+            self.logger.debug("Terminal enhancements complete - console has been aesthetically upgraded")
 
         except Exception as e:
-            self.logger.error(f"Failed to enhance terminal: {str(e)}", exc_info=True)
+            self.logger.error(f"Terminal enhancement failed: {str(e)}", exc_info=True)
 
     def _enhance_terminal_header(self, terminal: QWidget) -> None:
-        """
-        Enhance the terminal header styling.
-
-        Args:
-            terminal: The terminal widget containing the header
-
-        Like applying a decorative frieze to the entry of a digital temple,
-        we polish the top border of our console while questioning if headers
-        truly matter in the stream of consciousness that is terminal output.
-        """
+        """Enhance the terminal header with improved styling."""
         try:
             # Find header
             header = terminal.findChild(QFrame, "TerminalHeader")
@@ -651,17 +624,7 @@ class UIEnhancer:
             self.logger.error(f"Failed to enhance terminal header: {str(e)}", exc_info=True)
 
     def _enhance_terminal_output(self, terminal: QWidget) -> None:
-        """
-        Enhance the terminal output area.
-
-        Args:
-            terminal: The terminal widget containing the output area
-
-        Like designing a better void for text to inhabit, we adjust the
-        background and styling of the digital stream of consciousness that
-        is terminal output - a record of commands that, like human actions,
-        will eventually be cleared and forgotten.
-        """
+        """Enhance the terminal output area with improved styling."""
         try:
             # Find output area
             output = terminal.findChild(QTextEdit, "TerminalOutput")
@@ -669,18 +632,27 @@ class UIEnhancer:
                 self.logger.warning("Terminal output not found - the void remains unstyled")
                 return
 
-            # Apply direct styling
+            # Apply styling directly to output area
+            bg_color = Theme.get_color('BG_DARK')
+            text_color = Theme.get_color('TEXT_PRIMARY')
+
             output.setStyleSheet(f"""
                 QTextEdit#TerminalOutput {{
-                    background-color: {Theme.get_color('BG_DARK')};
-                    color: {Theme.get_color('TEXT_PRIMARY')};
+                    background-color: {bg_color}; 
+                    color: {text_color};
                     border: none;
                     border-radius: 4px;
                     padding: 10px;
                     selection-background-color: {Theme.get_color('PRIMARY')};
-                    selection-color: {Theme.get_color('TEXT_PRIMARY')};
+                    selection-color: {text_color};
                 }}
             """)
+
+            # Force update through palette as well
+            palette = output.palette()
+            palette.setColor(output.backgroundRole(), QColor(bg_color))
+            palette.setColor(output.foregroundRole(), QColor(text_color))
+            output.setPalette(palette)
 
             self.logger.debug("Terminal output enhanced - digital void now more aesthetically pleasing")
 
@@ -688,16 +660,7 @@ class UIEnhancer:
             self.logger.error(f"Failed to enhance terminal output: {str(e)}", exc_info=True)
 
     def _enhance_terminal_input(self, terminal: QWidget) -> None:
-        """
-        Enhance the terminal input area.
-
-        Args:
-            terminal: The terminal widget containing the input area
-
-        Like designing a better entry point for human-machine communication,
-        we reshape the aesthetic of the command input field while contemplating
-        the arbitrary nature of digital interfaces.
-        """
+        """Enhance the terminal input area with improved styling."""
         try:
             # Find input container
             input_container = terminal.findChild(QFrame, "InputContainer")
@@ -774,10 +737,13 @@ class UIEnhancer:
                 if output:
                     # Force the background color using a stylesheet with !important
                     bg_color = Theme.get_color('BG_DARK')
+                    text_color = Theme.get_color('TEXT_PRIMARY')
+
+                    # Keep trying different approaches until one works
                     output.setStyleSheet(f"""
                         QTextEdit#TerminalOutput {{
                             background-color: {bg_color} !important;
-                            color: {Theme.get_color('TEXT_PRIMARY')};
+                            color: {text_color};
                             border: none;
                             border-radius: 4px;
                             padding: 10px;
@@ -787,6 +753,7 @@ class UIEnhancer:
                     # Update the palette as well for stubborn widgets
                     palette = output.palette()
                     palette.setColor(output.backgroundRole(), QColor(bg_color))
+                    palette.setColor(output.foregroundRole(), QColor(text_color))
                     output.setPalette(palette)
 
                     # Force update
@@ -848,6 +815,7 @@ class UIEnhancer:
 
             # Get theme colors
             primary_color = QColor(Theme.get_color('PRIMARY'))
+            secondary_color = QColor(Theme.get_color('SECONDARY'))
             text_color = QColor(Theme.get_color('TEXT_PRIMARY'))
 
             # Create circular background with gradient
@@ -941,6 +909,73 @@ class UIEnhancer:
             self.logger.error(f"Color adjustment error: {str(e)}", exc_info=True)
             return color  # Return original color on error
 
+    def _create_or_clear_layout(self, widget: QWidget) -> bool:
+        """
+        Safely create a new layout or clear an existing one without causing crashes.
+
+        This is a critical safety method that avoids the dangerous pattern of:
+        1. Deleting a layout
+        2. Setting the widget's layout to None (crash-prone)
+        3. Creating a new layout
+
+        Instead, we either:
+        1. Use the existing layout but clear its contents
+        2. Create a new layout if none exists
+
+        Args:
+            widget: The widget to set up a layout for
+
+        Returns:
+            True if layout is ready to use, False if operation failed
+        """
+        try:
+            existing_layout = widget.layout()
+
+            if existing_layout:
+                # Clear all widgets from existing layout
+                while existing_layout.count():
+                    item = existing_layout.takeAt(0)
+                    if item.widget():
+                        item.widget().hide()
+                        item.widget().deleteLater()
+                    elif item.layout():
+                        # Recursively clear sublayouts
+                        self._delete_layout_contents(item.layout())
+                    elif item.spacerItem():
+                        # Just remove spacers
+                        pass
+
+                # Don't delete the layout or set it to None - that causes crashes!
+                return True
+            else:
+                # Create a new layout since none exists
+                new_layout = QVBoxLayout(widget)
+                new_layout.setContentsMargins(10, 10, 10, 10)
+                new_layout.setSpacing(5)
+                return True
+
+        except Exception as e:
+            self.logger.error(f"Layout operation failed: {str(e)}", exc_info=True)
+            return False
+
+    def _delete_layout_contents(self, layout) -> None:
+        """
+        Recursively delete contents of a layout without deleting the layout itself.
+
+        Args:
+            layout: The layout to clear
+        """
+        if not layout:
+            return
+
+        while layout.count():
+            item = layout.takeAt(0)
+            if item.widget():
+                item.widget().hide()
+                item.widget().deleteLater()
+            elif item.layout():
+                self._delete_layout_contents(item.layout())
+
 
 def enhance_main_window(main_window: QMainWindow) -> None:
     """
@@ -965,6 +1000,7 @@ def enhance_main_window(main_window: QMainWindow) -> None:
         logger.info("Main window enhancement complete - digital makeover successful")
     except Exception as e:
         logger.error(f"Failed to enhance main window: {str(e)}", exc_info=True)
+        # Continue execution - failure to beautify is not a reason to crash
 
 
 def apply_theme_enhancements() -> None:
@@ -988,77 +1024,26 @@ def apply_theme_enhancements() -> None:
         logger.error(f"Failed to apply theme enhancements: {str(e)}", exc_info=True)
 
 
-def delayed_show_window(main_window: QMainWindow, delay_ms: int = 100) -> None:
-    """
-    Show the main window after a delay to prevent UI flash.
-
-    Args:
-        main_window: Main window to show
-        delay_ms: Delay in milliseconds
-
-    Like a theatrical curtain reveal after stage setup, this function
-    delays the window visibility until UI enhancements are applied,
-    preventing the jarring flash of un-styled components.
-    """
-    logger = logging.getLogger(__name__)
-    try:
-        # Create a timer
-        timer = QTimer(main_window)
-        timer.setSingleShot(True)
-        timer.timeout.connect(main_window.show)
-
-        # Start timer
-        timer.start(delay_ms)
-
-        logger.debug(f"Window show delayed by {delay_ms}ms - preventing the aesthetic flash of doom")
-    except Exception as e:
-        logger.error(f"Failed to setup delayed window show: {str(e)}", exc_info=True)
-        # Show window anyway if delay setup fails
-        main_window.show()
-
-
 # Integration function for main.py
-def setup_ui_enhancements_and_show(main_window: QMainWindow, use_splash: bool = False) -> None:
+def setup_ui_enhancements(main_window: QMainWindow) -> None:
     """
-    Set up UI enhancements and show the main window properly.
+    Set up UI enhancements and safely apply them.
 
     Args:
-        main_window: Main window to enhance and show
-        use_splash: Whether to show a splash screen during enhancement
+        main_window: Main window to enhance
 
-    This function is the main integration point for the UI enhancer,
-    coordinating theme fixes, UI enhancements, and proper window display
-    to prevent UI flashing during startup.
+    Like a digital beautician carefully applying cosmetic improvements,
+    this function coordinates theme enhancements and UI beautification
+    in a way that doesn't disrupt the application's core functionality.
     """
     logger = logging.getLogger(__name__)
     try:
         # Apply theme enhancements first
         apply_theme_enhancements()
 
-        # Handle splash screen if requested
-        if use_splash:
-            # Create splash screen
-            pixmap = QPixmap(400, 300)
-            pixmap.fill(QColor(Theme.get_color('BG_DARK')))
-            splash = QSplashScreen(pixmap)
-            splash.show()
+        # Apply UI enhancements with a delay to ensure window is ready
+        QTimer.singleShot(100, lambda: enhance_main_window(main_window))
 
-            # Process events to ensure splash is visible
-            QApplication.processEvents()
-
-            # Enhance UI
-            enhance_main_window(main_window)
-
-            # Show window and close splash
-            QTimer.singleShot(500, lambda: splash.close())
-            QTimer.singleShot(500, lambda: main_window.show())
-        else:
-            # Apply enhancements first, then show window with delay
-            enhance_main_window(main_window)
-            delayed_show_window(main_window)
-
-        logger.info("UI enhancements and window display configured successfully")
+        logger.info("UI enhancements setup complete")
     except Exception as e:
         logger.error(f"Failed to setup UI enhancements: {str(e)}", exc_info=True)
-        # Show window anyway if enhancement fails
-        main_window.show()

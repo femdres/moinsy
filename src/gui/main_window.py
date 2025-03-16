@@ -13,6 +13,7 @@ from gui.components.help_window import HelpWindow
 from gui.components.installation_window import InstallationWindow
 from gui.components.command_builder import CommandBuilder
 from gui.styles.ui_enhancer_integration import setup_ui_enhancements
+from gui.styles.theme import Theme
 from managers.installation_manager import InstallationManager
 from managers.tools_manager import ToolsManager
 from managers.config_manager import ConfigManager
@@ -229,11 +230,7 @@ class MainWindow(QMainWindow):
             # Log but continue - we can function with disconnected buttons
 
     def apply_settings(self) -> None:
-        """Apply settings from configuration manager to UI components.
-
-        Retrieves configuration values and applies them to the appropriate
-        UI components. Called at startup and whenever settings are changed.
-        """
+        """Apply settings from configuration manager to UI components."""
         try:
             # Window size
             window_size = self.config_manager.get_setting("general", "window_size", {"width": 1200, "height": 950})
@@ -259,10 +256,10 @@ class MainWindow(QMainWindow):
                 self.terminal.set_buffer_size(terminal_buffer_size)
                 self.logger.debug(f"Applied terminal buffer size: {terminal_buffer_size}")
 
-            # Theme
-            theme = self.config_manager.get_setting("general", "theme", "dark")
-            self.apply_theme(theme)
-            self.logger.debug(f"Applied theme: {theme}")
+            # Colored buttons setting - a toggle between chromatic expression and grayscale uniformity
+            colored_buttons = self.config_manager.get_setting("general", "colored_buttons", True)
+            Theme.set_use_colored_buttons(colored_buttons)
+            self.logger.debug(f"Applied colored buttons setting: {colored_buttons}")
 
             # Log level
             log_level = self.config_manager.get_setting("system", "log_level", "INFO")

@@ -139,7 +139,8 @@ class GeneralSettingsTab(QWidget):
             self.theme_description.setWordWrap(True)
             appearance_layout.addRow("", self.theme_description)
 
-            self.colored_buttons_checkbox = QCheckBox("Use colored buttons")
+            # Add colored buttons checkbox to appearance_layout (not settings_layout)
+            self.colored_buttons_checkbox = QCheckBox("Use colored buttons in sidebar")
             self.colored_buttons_checkbox.setStyleSheet("""
                         QCheckBox {
                             color: white;
@@ -157,10 +158,10 @@ class GeneralSettingsTab(QWidget):
                     """)
             appearance_layout.addRow("", self.colored_buttons_checkbox)
 
-            # Colored buttons description
+            # Add a subtle description of this existential choice
             colored_buttons_desc = QLabel(
-                "When enabled, buttons will use theme colors. When disabled, buttons will use a uniform style. "
-                "Like choosing between a vibrant wardrobe or a monochrome uniform."
+                "When enabled, navigation buttons display with unique colors. When disabled, "
+                "buttons embrace the monochrome uniformity that better reflects our existential condition."
             )
             colored_buttons_desc.setStyleSheet("color: #888888; font-size: 12px;")
             colored_buttons_desc.setWordWrap(True)
@@ -375,7 +376,7 @@ class GeneralSettingsTab(QWidget):
             layout.addStretch()
 
         except Exception as e:
-            self.logger.error(f"Failed to set up general settings UI: {str(e)}", exc_info=True)
+            self.logger.critical(f"Failed to set up general settings UI: {str(e)}", exc_info=True)
             # Create a minimalist error message - a whisper of failure in the digital void
             error_label = QLabel(
                 f"Failed to create settings interface: {str(e)}\nEven UI creation is fraught with existential peril.")
@@ -391,19 +392,6 @@ class GeneralSettingsTab(QWidget):
         upon our UI elements like digital memories haunting the present moment.
         """
         try:
-            # Theme - our preferred shade of digital reality
-            theme = self.config_manager.get_setting("general", "theme", "dark")
-            theme_index = self.theme_combo.findData(theme)
-            if theme_index >= 0:
-                self.theme_combo.setCurrentIndex(theme_index)
-                # Update description based on theme
-                self._update_theme_description(theme)
-            else:
-                # If theme not found, default to dark - all roads lead to darkness
-                self.theme_combo.setCurrentIndex(0)
-                self._update_theme_description("dark")
-                self.logger.warning(f"Unknown theme '{theme}', falling back to dark theme")
-
             # Colored buttons - whether they have color
             colored_buttons = self.config_manager.get_setting("general", "colored_buttons", True)
             self.colored_buttons_checkbox.setChecked(colored_buttons)
@@ -448,7 +436,7 @@ class GeneralSettingsTab(QWidget):
     def _store_original_values(self) -> None:
         try:
             self.original_values = {
-                "theme": self.theme_combo.currentData(),
+                # Remove theme-related items
                 "window_width": self.window_width_spin.value(),
                 "window_height": self.window_height_spin.value(),
                 "sidebar_width": self.sidebar_width_spin.value(),
@@ -456,7 +444,7 @@ class GeneralSettingsTab(QWidget):
                 "terminal_buffer_size": self.terminal_buffer_size_spin.value(),
                 "show_timestamps": self.timestamp_checkbox.isChecked(),
                 "autostart": self.autostart_checkbox.isChecked(),
-                "colored_buttons": self.colored_buttons_checkbox.isChecked()  # Add this line
+                "colored_buttons": self.colored_buttons_checkbox.isChecked()
             }
             self.logger.debug("Original settings values stored - a baseline for measuring change")
         except Exception as e:
@@ -501,11 +489,6 @@ class GeneralSettingsTab(QWidget):
         comes first.
         """
         try:
-            # Theme - our preferred shade of digital darkness
-            theme_index = self.theme_combo.currentIndex()
-            theme_value = self.theme_combo.itemData(theme_index)
-            self.config_manager.set_setting("general", "theme", theme_value)
-
             # Colored buttons - whether they have colors
             self.config_manager.set_setting("general", "colored_buttons", self.colored_buttons_checkbox.isChecked())
 
