@@ -12,6 +12,7 @@ from gui.components.terminal import TerminalArea
 from gui.components.help_window import HelpWindow
 from gui.components.installation_window import InstallationWindow
 from gui.components.command_builder import CommandBuilder
+from gui.styles.ui_enhancer_integration import setup_ui_enhancements
 from managers.installation_manager import InstallationManager
 from managers.tools_manager import ToolsManager
 from managers.config_manager import ConfigManager
@@ -54,6 +55,9 @@ class MainWindow(QMainWindow):
 
             # Apply settings
             self.apply_settings()
+
+            # Apply UI enhancements
+            self.ui_manager = setup_ui_enhancements(self)
 
             self.logger.info("Main window initialization complete")
 

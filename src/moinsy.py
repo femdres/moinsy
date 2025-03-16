@@ -224,13 +224,8 @@ def main() -> int:
 
 
 if __name__ == "__main__":
-    from gui.styles.ui_enhancer import apply_ui_enhancements
-
     app = QApplication(sys.argv)
     window = MainWindow()
-
-    # Apply UI enhancements
-    apply_ui_enhancements(window)
 
     window.show()
     sys.exit(app.exec())

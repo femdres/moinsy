@@ -1,677 +1,559 @@
 #!/usr/bin/env python3
 """
-Moinsy UI Enhancement Implementation
------------------------------------
-This module provides updates to the Moinsy UI, improving visual hierarchy,
-adding borders, redesigning the system progress section, and fixing the
-High Contrast theme's readability issues.
+UI enhancement module for Moinsy application.
 
-Like digital cosmetic surgery, we carefully reshape the application's
-aesthetic structure while preserving its underlying functionality.
+This module provides post-initialization UI enhancements to correct styling issues,
+fix theme inconsistencies, and improve visual coherence across the application.
+
+Like a digital plastic surgeon carefully correcting aesthetic imperfections,
+this module meticulously adjusts borders, colors, and spacing to achieve
+visual harmony in an otherwise fragmented interface.
 """
 
-import os
 import logging
-from typing import Optional, Dict, Any, Tuple, Union
+from typing import Optional, Dict, Any, Union, List, cast
 from PyQt6.QtWidgets import (
-    QWidget, QVBoxLayout, QHBoxLayout, QPushButton,
-    QLabel, QProgressBar, QFrame, QSpacerItem, QSizePolicy
+    QMainWindow, QWidget, QFrame, QPushButton, QLabel,
+    QProgressBar, QTextEdit, QLineEdit, QApplication
 )
-from PyQt6.QtCore import Qt, QSize
-from PyQt6.QtGui import (
-    QFont, QPainter, QPen, QColor, QIcon, QPixmap,
-    QPainterPath, QLinearGradient, QBrush, QRadialGradient
-)
+from PyQt6.QtCore import Qt, QObject, QRect, QSize, QTimer
+from PyQt6.QtGui import QColor, QPalette, QFont
 
 from gui.styles.theme import Theme
 
 
 class UIEnhancer:
     """
-    Enhances the UI of the Moinsy application by implementing
-    visual improvements to borders, components, and themes.
+    Enhanced UI styling for Moinsy application.
 
-    Like a digital interior decorator, this class applies aesthetic
-    changes to transform the application's visual appeal.
+    This class applies comprehensive styling improvements to fix inconsistencies
+    and enhance the visual appearance of the Moinsy application. It focuses on
+    border consistency, spacing, color correctness during theme changes, and
+    overall visual harmony.
+
+    Like an obsessive-compulsive interior decorator who can't rest until every
+    pixel is perfectly aligned, this class meticulously adjusts the UI details
+    that keep design-conscious users awake at night.
     """
 
-    def __init__(self, logger: Optional[logging.Logger] = None):
+    def __init__(self, main_window: QMainWindow):
         """
-        Initialize the UI enhancer.
+        Initialize UI enhancer with reference to main application window.
 
         Args:
-            logger: Optional logger instance for tracking enhancement operations
+            main_window: Application's main window to be enhanced
+
+        Like being handed the keys to a house in need of renovation,
+        this initializer accepts the main window as the canvas for our
+        aesthetic improvements.
         """
-        self.logger = logger or logging.getLogger(__name__)
-        self.logger.debug("Initializing UI enhancer - preparing aesthetic transformation")
+        self.main_window = main_window
+        self.logger = logging.getLogger(__name__)
 
-    def enhance_high_contrast_theme(self) -> Dict[str, str]:
-        """
-        Create an improved color palette for the High Contrast theme
-        that's more readable and visually appealing.
-
-        Returns:
-            Dictionary containing the enhanced High Contrast color palette
-        """
-        self.logger.debug("Enhancing High Contrast theme colors - refining the digital palette")
-
-        # Define an improved color palette that maintains high contrast
-        # while being more visually appealing and addressing readability
-        return {
-            # Primary colors - more distinct and less harsh
-            'PRIMARY': '#1AFF66',  # Softer green (was #00FF00)
-            'SECONDARY': '#00B7FF',  # Bright blue (was #FFFF00)
-            'TERTIARY': '#FF47FF',  # Softer magenta (was #FF00FF)
-
-            # Backgrounds - slightly improved contrast hierarchy
-            'BG_DARK': '#000000',  # Black background
-            'BG_MEDIUM': '#121212',  # Slightly lighter (was #0A0A0A)
-            'BG_LIGHT': '#2A2A2A',  # Better contrast gray (was #202020)
-
-            # Text colors - improved readability
-            'TEXT_PRIMARY': '#FFFFFF',  # White text
-            'TEXT_SECONDARY': '#E0E0E0',  # Lighter gray for better visibility
-
-            # Status colors - more distinct from each other
-            'SUCCESS': '#00CC66',  # Distinct green (was #00FF00)
-            'ERROR': '#FF3333',  # Bright red (was #FF0000)
-            'WARNING': '#FFCC00',  # Amber (was #FFFF00)
-
-            # Control colors - better contrast
-            'CONTROL_BG': '#3A3A3A',  # Medium gray (was #303030)
-            'CONTROL_HOVER': '#555555'  # Lighter gray (was #505050)
+        # Cache for theme-specific style properties
+        self.style_cache: Dict[str, Dict[str, Any]] = {
+            "dark": {},
+            "light": {},
+            "high_contrast": {}
         }
 
-    def apply_theme_enhancements(self) -> None:
-        """
-        Apply enhancements to the Theme class's color definitions.
+        # Initialize component references
+        self.sidebar: Optional[QWidget] = None
+        self.terminal_area: Optional[QWidget] = None
+        self.reboot_button: Optional[QPushButton] = None
+        self.exit_button: Optional[QPushButton] = None
+        self.terminal_output: Optional[QTextEdit] = None
+        self.clear_button: Optional[QPushButton] = None
+        self.progress_frame: Optional[QFrame] = None
 
-        Replaces the existing High Contrast theme with the improved version.
+        # Connect to theme change events if available
+        if hasattr(main_window, 'apply_theme'):
+            # Store original apply_theme method
+            self._original_apply_theme = main_window.apply_theme
+
+            # Override with our enhanced version
+            main_window.apply_theme = self._enhanced_apply_theme
+
+    def enhance_ui(self) -> None:
+        """
+        Apply comprehensive UI enhancements to the application.
+
+        Like a digital renovation project, this method systematically
+        improves each component of the interface, ensuring visual
+        consistency and correcting styling issues.
         """
         try:
-            self.logger.info("Applying theme enhancements to High Contrast theme")
+            self.logger.info("Applying comprehensive UI enhancements to Moinsy - our digital renovation begins")
 
-            # Update the High Contrast theme colors
-            enhanced_colors = self.enhance_high_contrast_theme()
-            Theme.COLORS[Theme.THEME_HIGH_CONTRAST] = enhanced_colors
+            # Step 1: Find and cache references to key components
+            self._find_components()
 
-            self.logger.debug("High Contrast theme enhancements applied successfully")
+            # Step 2: Apply theme-appropriate enhancements
+            current_theme = self._get_current_theme()
+            self.logger.info(f"Applying theme enhancements to {current_theme.title()} theme")
+
+            # Step 3: Apply specific enhancements
+            self._enhance_sidebar()
+            self._enhance_terminal_area()
+            self._enhance_buttons()
+            self._enhance_progress_section()
+
+            # Step 4: Apply delayed fixes for theme-switching issues
+            QTimer.singleShot(100, self._apply_delayed_fixes)
+
+            self.logger.info("UI enhancements applied successfully - our digital space now slightly less hideous")
         except Exception as e:
-            self.logger.error(f"Failed to apply theme enhancements: {str(e)}")
-            # Continue with other enhancements even if theme update fails
+            self.logger.error(f"Failed to enhance UI: {str(e)}", exc_info=True)
 
-    def create_moinsy_logo(self, size: int = 50) -> QPixmap:
+    def _find_components(self) -> None:
         """
-        Create a custom Moinsy logo as a QPixmap.
+        Locate and cache references to key UI components.
 
-        Args:
-            size: Size of the logo in pixels
-
-        Returns:
-            QPixmap containing the generated Moinsy logo
+        Like a detective searching for clues in a digital landscape,
+        this method finds the critical UI components that need enhancement.
         """
         try:
-            # Create pixmap with transparent background
-            pixmap = QPixmap(size, size)
-            pixmap.fill(Qt.GlobalColor.transparent)
+            # Find sidebar
+            self.sidebar = self.main_window.findChild(QWidget, "MainSidebar")
 
-            # Initialize painter
-            painter = QPainter(pixmap)
-            painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+            # Find terminal area
+            self.terminal_area = self.main_window.findChild(QWidget, "TerminalArea")
 
-            # Get theme colors
-            primary_color = QColor(Theme.get_color('PRIMARY'))
-            secondary_color = QColor(Theme.get_color('SECONDARY'))
-            text_color = QColor(Theme.get_color('TEXT_PRIMARY'))
+            # Find button components
+            self.reboot_button = self.main_window.findChild(QPushButton, "RebootButton")
+            self.exit_button = self.main_window.findChild(QPushButton, "ExitButton")
 
-            # Create circular background with gradient
-            gradient = QRadialGradient(size / 2, size / 2, size / 2)
-            gradient.setColorAt(0, primary_color)
-            gradient.setColorAt(1, primary_color.darker(120))
+            # Find terminal components
+            if self.terminal_area:
+                self.terminal_output = self.terminal_area.findChild(QTextEdit, "TerminalOutput")
+                self.clear_button = self.terminal_area.findChild(QPushButton, "ClearButton")
 
-            # Draw circular background
-            painter.setBrush(QBrush(gradient))
-            painter.setPen(Qt.PenStyle.NoPen)
-            painter.drawEllipse(2, 2, size - 4, size - 4)
-
-            # Draw border
-            pen = QPen(text_color, 2)
-            painter.setPen(pen)
-            painter.setBrush(Qt.BrushStyle.NoBrush)
-            painter.drawEllipse(2, 2, size - 4, size - 4)
-
-            # Draw a stylized "M" in the center
-            path = QPainterPath()
-
-            # Create the stylized "M" path
-            center_x = size / 2
-            center_y = size / 2
-            width = size * 0.6
-            height = size * 0.4
-
-            # Define the points of the "M"
-            left = center_x - width / 2
-            right = center_x + width / 2
-            top = center_y - height / 2
-            bottom = center_y + height / 2
-
-            # Draw the M
-            path.moveTo(left, bottom)  # Bottom left
-            path.lineTo(left + width * 0.2, top)  # Top left peak
-            path.lineTo(center_x, bottom - height * 0.3)  # Middle dip
-            path.lineTo(right - width * 0.2, top)  # Top right peak
-            path.lineTo(right, bottom)  # Bottom right
-
-            # Set pen for the "M"
-            pen = QPen(text_color, 3)
-            pen.setCapStyle(Qt.PenCapStyle.RoundCap)
-            pen.setJoinStyle(Qt.PenJoinStyle.RoundJoin)
-            painter.setPen(pen)
-
-            # Draw the path
-            painter.drawPath(path)
-
-            # End painting
-            painter.end()
-
-            self.logger.debug("Moinsy logo created successfully")
-            return pixmap
+            # Find progress section
+            self.progress_frame = self.main_window.findChild(QFrame, "ProgressFrame")
 
         except Exception as e:
-            self.logger.error(f"Failed to create Moinsy logo: {str(e)}")
-            # Return an empty pixmap if logo creation fails
-            return QPixmap(size, size)
+            self.logger.error(f"Error finding UI components: {str(e)}", exc_info=True)
 
-    def enhance_sidebar_styling(self) -> str:
+    def _enhance_sidebar(self) -> None:
         """
-        Generate enhanced styling for the sidebar.
+        Enhance sidebar styling for consistent appearance.
 
-        Returns:
-            CSS-like stylesheet string for the sidebar
+        Like a facade renovation on a building's entrance, this method
+        improves the sidebar that serves as the application's primary
+        navigation interface.
         """
+        if not self.sidebar:
+            self.logger.warning("Sidebar not found - cannot apply sidebar enhancements")
+            return
+
         try:
-            # Get theme colors
+            self.logger.info("Applying comprehensive sidebar enhancements - the digital makeover begins")
+
+            # Apply consistent border to sidebar
+            current_theme = self._get_current_theme()
             bg_color = Theme.get_color('BG_MEDIUM')
             border_color = Theme.get_color('BG_LIGHT')
 
-            # Create enhanced sidebar styling with border
-            stylesheet = f"""
+            # Enhanced sidebar styling with consistent border
+            self.sidebar.setStyleSheet(f"""
                 QWidget#MainSidebar {{
                     background-color: {bg_color};
-                    border: 1px solid {border_color};
-                    border-radius: 8px;
-                    margin: 5px;
-                }}
-            """
-
-            self.logger.debug("Enhanced sidebar styling generated")
-            return stylesheet
-
-        except Exception as e:
-            self.logger.error(f"Failed to generate sidebar styling: {str(e)}")
-            # Return minimal styling as fallback
-            return "QWidget#MainSidebar { background-color: #2d2e32; }"
-
-    def enhance_terminal_styling(self) -> str:
-        """
-        Generate enhanced styling for the terminal area.
-
-        Returns:
-            CSS-like stylesheet string for the terminal
-        """
-        try:
-            # Get theme colors
-            bg_color = Theme.get_color('BG_DARK')
-            border_color = Theme.get_color('BG_LIGHT')
-
-            # Create enhanced terminal styling with border
-            stylesheet = f"""
-                QWidget#TerminalArea {{
-                    background-color: {bg_color};
-                    border: 1px solid {border_color};
-                    border-radius: 8px;
-                    margin: 5px;
-                }}
-            """
-
-            self.logger.debug("Enhanced terminal styling generated")
-            return stylesheet
-
-        except Exception as e:
-            self.logger.error(f"Failed to generate terminal styling: {str(e)}")
-            # Return minimal styling as fallback
-            return "QWidget#TerminalArea { background-color: #1a1b1e; }"
-
-    def generate_progress_section_styling(self) -> Dict[str, str]:
-        """
-        Generate styling for the enhanced progress section components.
-
-        Returns:
-            Dictionary mapping component IDs to their stylesheet strings
-        """
-        try:
-            # Get theme colors
-            primary_color = Theme.get_color('PRIMARY')
-            bg_medium = Theme.get_color('BG_MEDIUM')
-            bg_light = Theme.get_color('BG_LIGHT')
-            text_primary = Theme.get_color('TEXT_PRIMARY')
-            text_secondary = Theme.get_color('TEXT_SECONDARY')
-
-            # Create styles for components
-            styles = {
-                # Frame container
-                "ProgressFrame": f"""
-                    QFrame#ProgressFrame {{
-                        background-color: {bg_medium};
-                        border: 1px solid {bg_light};
-                        border-radius: 8px;
-                        padding: 10px;
-                        margin: 5px;
-                    }}
-                """,
-
-                # Progress header
-                "ProgressHeader": f"""
-                    QLabel#ProgressHeader {{
-                        color: {text_primary};
-                        font-size: 14px;
-                        font-weight: bold;
-                        padding-left: 5px;
-                    }}
-                """,
-
-                # Progress percentage
-                "ProgressPercentage": f"""
-                    QLabel#ProgressPercentage {{
-                        color: {primary_color};
-                        font-size: 28px;
-                        font-weight: bold;
-                        padding: 5px;
-                    }}
-                """,
-
-                # Progress bar
-                "ProgressBar": f"""
-                    QProgressBar {{
-                        background-color: {bg_light};
-                        border: none;
-                        border-radius: 4px;
-                        text-align: center;
-                        margin-top: 5px;
-                        margin-bottom: 5px;
-                    }}
-                    QProgressBar::chunk {{
-                        background-color: {primary_color};
-                        border-radius: 4px;
-                    }}
-                """,
-
-                # Status text
-                "ProgressStatus": f"""
-                    QLabel#ProgressStatus {{
-                        color: {text_secondary};
-                        font-size: 12px;
-                        margin-top: 3px;
-                    }}
-                """
-            }
-
-            self.logger.debug("Progress section styling generated successfully")
-            return styles
-
-        except Exception as e:
-            self.logger.error(f"Failed to generate progress section styling: {str(e)}")
-            # Return empty dict as fallback
-            return {}
-
-
-class SidebarEnhancer:
-    """
-    Enhances the Sidebar component with improved styling and layout.
-
-    Like an aesthetic architect redesigning the navigational framework,
-    this class transforms the sidebar's visual organization.
-    """
-
-    def __init__(self, sidebar: QWidget, logger: Optional[logging.Logger] = None):
-        """
-        Initialize the sidebar enhancer.
-
-        Args:
-            sidebar: The sidebar widget to enhance
-            logger: Optional logger instance
-        """
-        self.sidebar = sidebar
-        self.logger = logger or logging.getLogger(__name__)
-        self.ui_enhancer = UIEnhancer(self.logger)
-        self.logger.debug("Sidebar enhancer initialized - preparing navigational facelift")
-
-    def apply_enhancements(self) -> None:
-        """
-        Apply all sidebar enhancements at once.
-
-        This includes border styling, logo redesign, and progress section improvements.
-        """
-        try:
-            self.logger.info("Applying comprehensive sidebar enhancements")
-
-            # Apply base styling with border
-            self.enhance_base_styling()
-
-            # Redesign the logo section
-            self.enhance_logo_section()
-
-            # Redesign the progress section
-            self.enhance_progress_section()
-
-            self.logger.info("Sidebar enhancements applied successfully")
-        except Exception as e:
-            self.logger.error(f"Failed to apply sidebar enhancements: {str(e)}")
-
-    def enhance_base_styling(self) -> None:
-        """
-        Apply enhanced base styling to the sidebar.
-        """
-        try:
-            # Get enhanced sidebar styling
-            stylesheet = self.ui_enhancer.enhance_sidebar_styling()
-
-            # Apply styling to sidebar
-            self.sidebar.setStyleSheet(stylesheet)
-            self.logger.debug("Enhanced sidebar base styling applied")
-        except Exception as e:
-            self.logger.error(f"Failed to apply sidebar base styling: {str(e)}")
-
-    def enhance_logo_section(self) -> None:
-        """
-        Redesign the logo section with a custom Moinsy logo.
-        """
-        try:
-            # Find the logo container
-            logo_container = self.sidebar.findChild(QFrame, "LogoContainer")
-            if not logo_container:
-                self.logger.warning("Logo container not found - skipping logo enhancement")
-                return
-
-            # Find the logo label
-            logo_label = self.sidebar.findChild(QLabel, "LogoLabel")
-            if not logo_label:
-                self.logger.warning("Logo label not found - skipping logo enhancement")
-                return
-
-            # Create logo pixmap
-            logo_pixmap = self.ui_enhancer.create_moinsy_logo(50)
-
-            # Create a new logo label
-            new_logo_label = QLabel()
-            new_logo_label.setObjectName("MoinsyLogoImage")
-            new_logo_label.setPixmap(logo_pixmap)
-            new_logo_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            new_logo_label.setFixedSize(50, 50)
-
-            # Insert the new logo before the text logo
-            logo_layout = logo_container.layout()
-            if logo_layout:
-                # Insert at the beginning with alignment
-                logo_layout.insertWidget(0, new_logo_label, 0, Qt.AlignmentFlag.AlignCenter)
-
-                # Enhance the text logo styling
-                logo_label.setStyleSheet(f"""
-                    color: {Theme.get_color('PRIMARY')};
-                    font-size: 18px;
-                    font-weight: bold;
-                    letter-spacing: 2px;
-                    margin-top: 8px;
-                """)
-
-                # Apply border and rounded corners to the container
-                logo_container.setStyleSheet(f"""
-                    QFrame#LogoContainer {{
-                        background-color: {Theme.get_color('BG_MEDIUM')};
-                        border: 1px solid {Theme.get_color('BG_LIGHT')};
-                        border-radius: 8px;
-                        padding: 10px;
-                        margin: 5px;
-                    }}
-                """)
-
-                self.logger.debug("Logo section enhanced successfully")
-            else:
-                self.logger.warning("Logo container layout not found")
-
-        except Exception as e:
-            self.logger.error(f"Failed to enhance logo section: {str(e)}")
-
-    def enhance_progress_section(self) -> None:
-        """
-        Redesign the progress section with improved visual hierarchy.
-        """
-        try:
-            # Find the progress frame
-            progress_frame = self.sidebar.findChild(QFrame, "ProgressFrame")
-            if not progress_frame:
-                self.logger.warning("Progress frame not found - skipping progress enhancement")
-                return
-
-            # Find progress components
-            progress_bar = self.sidebar.findChild(QProgressBar, "ProgressBar")
-            progress_percentage = self.sidebar.findChild(QLabel, "ProgressPercentage")
-            progress_status = self.sidebar.findChild(QLabel, "ProgressStatus")
-
-            if not all([progress_bar, progress_percentage, progress_status]):
-                self.logger.warning("Progress components not found - skipping progress enhancement")
-                return
-
-            # Generate component styles
-            styles = self.ui_enhancer.generate_progress_section_styling()
-
-            # Apply styles to components
-            progress_frame.setStyleSheet(styles.get("ProgressFrame", ""))
-
-            if progress_percentage:
-                progress_percentage.setStyleSheet(styles.get("ProgressPercentage", ""))
-                # Make the percentage more prominent
-                font = progress_percentage.font()
-                font.setPointSize(18)
-                font.setBold(True)
-                progress_percentage.setFont(font)
-
-            if progress_bar:
-                progress_bar.setStyleSheet(styles.get("ProgressBar", ""))
-                # Make the progress bar a bit taller for better visibility
-                progress_bar.setMinimumHeight(8)
-                progress_bar.setMaximumHeight(8)
-
-            if progress_status:
-                progress_status.setStyleSheet(styles.get("ProgressStatus", ""))
-
-            # Find or create the header
-            progress_header = progress_frame.findChild(QLabel, "ProgressHeader")
-            if progress_header:
-                progress_header.setStyleSheet(styles.get("ProgressHeader", ""))
-
-            # Add a mini-icon to the header if not already present
-            if progress_frame.layout():
-                header_layout = None
-
-                # Check if there's a header layout already
-                for i in range(progress_frame.layout().count()):
-                    item = progress_frame.layout().itemAt(i)
-                    if isinstance(item, QHBoxLayout):
-                        header_layout = item
-                        break
-
-                # If no header layout found, create one and add it to the beginning
-                if not header_layout:
-                    # Create header layout
-                    header_layout = QHBoxLayout()
-                    header_layout.setSpacing(8)
-
-                    # Create icon
-                    icon_label = QLabel()
-                    icon_label.setObjectName("ProgressIcon")
-                    icon_label.setFixedSize(16, 16)
-                    icon_label.setStyleSheet(f"""
-                        QLabel#ProgressIcon {{
-                            background-color: {Theme.get_color('PRIMARY')};
-                            border-radius: 8px;
-                        }}
-                    """)
-                    header_layout.addWidget(icon_label)
-
-                    # Create header text (if not already there)
-                    if not progress_header:
-                        progress_header = QLabel("System Progress")
-                        progress_header.setObjectName("ProgressHeader")
-                        progress_header.setStyleSheet(styles.get("ProgressHeader", ""))
-
-                    header_layout.addWidget(progress_header)
-                    header_layout.addStretch()
-
-                    # Insert header layout at the beginning
-                    progress_frame.layout().insertLayout(0, header_layout)
-
-            self.logger.debug("Progress section enhanced successfully")
-
-        except Exception as e:
-            self.logger.error(f"Failed to enhance progress section: {str(e)}")
-
-
-class TerminalEnhancer:
-    """
-    Enhances the Terminal component with improved styling and border.
-
-    Like a digital interior designer refining the command center's
-    aesthetic, this class elevates the terminal's visual presence.
-    """
-
-    def __init__(self, terminal: QWidget, logger: Optional[logging.Logger] = None):
-        """
-        Initialize the terminal enhancer.
-
-        Args:
-            terminal: The terminal widget to enhance
-            logger: Optional logger instance
-        """
-        self.terminal = terminal
-        self.logger = logger or logging.getLogger(__name__)
-        self.ui_enhancer = UIEnhancer(self.logger)
-        self.logger.debug("Terminal enhancer initialized - preparing command center refinement")
-
-    def apply_enhancements(self) -> None:
-        """
-        Apply all terminal enhancements at once.
-
-        Adds border styling and improves internal component visuals.
-        """
-        try:
-            self.logger.info("Applying terminal area enhancements")
-
-            # Apply base styling with border
-            stylesheet = self.ui_enhancer.enhance_terminal_styling()
-            self.terminal.setStyleSheet(stylesheet)
-
-            # Enhance the terminal header
-            self.enhance_terminal_header()
-
-            self.logger.info("Terminal enhancements applied successfully")
-        except Exception as e:
-            self.logger.error(f"Failed to apply terminal enhancements: {str(e)}")
-
-    def enhance_terminal_header(self) -> None:
-        """
-        Enhance the terminal header styling.
-        """
-        try:
-            # Find the terminal header
-            header = self.terminal.findChild(QFrame, "TerminalHeader")
-            if not header:
-                self.logger.warning("Terminal header not found - skipping header enhancement")
-                return
-
-            # Apply enhanced styling
-            header.setStyleSheet(f"""
-                QFrame#TerminalHeader {{
-                    background-color: {Theme.get_color('BG_MEDIUM')};
-                    border-bottom: 1px solid {Theme.get_color('BG_LIGHT')};
-                    border-radius: 8px 8px 0 0;
-                    padding: 5px;
+                    border-right: 1px solid {border_color};
                 }}
             """)
 
-            # Find the title label
-            title = self.terminal.findChild(QLabel, "TerminalTitle")
-            if title:
-                title.setStyleSheet(f"""
-                    QLabel#TerminalTitle {{
-                        color: {Theme.get_color('TEXT_PRIMARY')};
-                        font-size: 14px;
-                        font-weight: bold;
+            # Fix sidebar button styling for better visibility
+            self._enhance_sidebar_buttons()
+
+            # Optimize control buttons (Reboot/Exit) in sidebar
+            self._optimize_control_buttons()
+
+        except Exception as e:
+            self.logger.error(f"Failed to apply sidebar enhancements: {str(e)} - our aesthetic ambitions crumble",
+                              exc_info=True)
+
+    def _enhance_sidebar_buttons(self) -> None:
+        """
+        Enhance sidebar navigation buttons for consistent appearance.
+
+        Like a tailor adjusting the fit of a digital garment, this method
+        ensures that navigation buttons maintain visual consistency.
+        """
+        if not self.sidebar:
+            return
+
+        # Get all navigation buttons in sidebar
+        nav_buttons = [
+            self.sidebar.findChild(QPushButton, "InstallationsButton"),
+            self.sidebar.findChild(QPushButton, "CommandsButton"),
+            self.sidebar.findChild(QPushButton, "ToolsButton"),
+            self.sidebar.findChild(QPushButton, "SettingsButton"),
+            self.sidebar.findChild(QPushButton, "HelpButton")
+        ]
+
+        # Filter out None values
+        nav_buttons = [btn for btn in nav_buttons if btn]
+
+        # Apply enhanced styling to each button
+        for button in nav_buttons:
+            # Get button's stored color property or use default
+            color = button.property("button_color")
+            if not color:
+                # Fallback to a default color based on theme
+                color = Theme.get_color('PRIMARY')
+
+            # Calculate hover and pressed colors
+            hover_color = Theme.adjust_color(color, -20)
+            pressed_color = Theme.adjust_color(color, -40)
+
+            # Apply enhanced styling
+            button.setStyleSheet(f"""
+                QPushButton {{
+                    background-color: {color};
+                    color: white;
+                    border: none;
+                    border-radius: 8px;
+                    padding: 10px;
+                    text-align: left;
+                    padding-left: 20px;
+                    font-size: 14px;
+                    font-weight: bold;
+                    margin: 2px 0;
+                }}
+                QPushButton:hover {{
+                    background-color: {hover_color};
+                }}
+                QPushButton:pressed {{
+                    background-color: {pressed_color};
+                }}
+            """)
+
+    def _optimize_control_buttons(self) -> None:
+        """
+        Optimize control buttons (Reboot/Exit) for consistent appearance.
+
+        Like a careful alignment of power controls on a spaceship console,
+        this method ensures the system control buttons are visually harmonious.
+        """
+        # Apply consistent styling to Reboot and Exit buttons
+        if self.reboot_button and self.exit_button:
+            # Get the container frame if it exists
+            control_frame = self.reboot_button.parentWidget()
+            if isinstance(control_frame, QFrame):
+                # Apply enhanced frame styling
+                control_frame.setStyleSheet(f"""
+                    QFrame {{
+                        background-color: {Theme.get_color('BG_LIGHT')};
+                        border: 1px solid {Theme.get_color('BG_LIGHT')};
+                        border-radius: 12px;
+                        margin: 10px 0;
+                        padding: 10px;
                     }}
                 """)
 
-            # Find the clear button
-            clear_button = self.terminal.findChild(QPushButton, "ClearButton")
-            if clear_button:
-                clear_button.setStyleSheet(f"""
+            # Apply enhanced button styling
+            reboot_color = Theme.get_color('ERROR')
+            exit_color = Theme.get_color('CONTROL_BG')
+
+            # Reboot button (danger style)
+            self.reboot_button.setStyleSheet(f"""
+                QPushButton {{
+                    background-color: {reboot_color};
+                    color: white;
+                    border: none;
+                    border-radius: 8px;
+                    padding: 10px;
+                    font-weight: bold;
+                    margin: 5px 0;
+                }}
+                QPushButton:hover {{
+                    background-color: {Theme.adjust_color(reboot_color, -20)};
+                }}
+            """)
+
+            # Exit button (neutral style)
+            self.exit_button.setStyleSheet(f"""
+                QPushButton {{
+                    background-color: {exit_color};
+                    color: white;
+                    border: none;
+                    border-radius: 8px;
+                    padding: 10px;
+                    font-weight: bold;
+                    margin: 5px 0;
+                }}
+                QPushButton:hover {{
+                    background-color: {Theme.adjust_color(exit_color, -20)};
+                }}
+            """)
+
+    def _enhance_terminal_area(self) -> None:
+        """
+        Enhance terminal area for consistent appearance.
+
+        Like a digital renovation of a command center, this method
+        ensures the terminal area is visually consistent and readable
+        across different themes.
+        """
+        if not self.terminal_area:
+            self.logger.warning("Terminal area not found - cannot apply terminal enhancements")
+            return
+
+        try:
+            self.logger.info("Applying terminal area enhancements - the console's makeover begins")
+
+            # Apply consistent styling to terminal area
+            current_theme = self._get_current_theme()
+            bg_color = Theme.get_color('BG_DARK')
+            text_color = Theme.get_color('TEXT_PRIMARY')
+
+            # Fix the terminal output and clear button styling
+            if self.terminal_output:
+                # Enhanced terminal output styling
+                self.terminal_output.setStyleSheet(f"""
+                    QTextEdit#TerminalOutput {{
+                        background-color: {bg_color};
+                        color: {text_color};
+                        border: 1px solid {Theme.get_color('BG_LIGHT')};
+                        border-radius: 8px;
+                        padding: 10px;
+                        selection-background-color: {Theme.get_color('PRIMARY')};
+                        selection-color: {Theme.get_color('TEXT_PRIMARY')};
+                    }}
+                """)
+
+                # Cache the styling for theme switching
+                self.style_cache[current_theme]["terminal_bg"] = bg_color
+
+            if self.clear_button:
+                # Enhanced clear button styling
+                clear_bg = Theme.get_color('BG_MEDIUM')
+                self.clear_button.setStyleSheet(f"""
                     QPushButton#ClearButton {{
-                        background-color: {Theme.get_color('BG_LIGHT')};
-                        color: {Theme.get_color('TEXT_PRIMARY')};
-                        border: none;
+                        background-color: {clear_bg};
+                        color: {text_color};
+                        border: 1px solid {Theme.get_color('BG_LIGHT')};
                         border-radius: 6px;
                         padding: 5px 10px;
                         font-size: 12px;
                     }}
                     QPushButton#ClearButton:hover {{
-                        background-color: {Theme.get_color('CONTROL_HOVER')};
+                        background-color: {Theme.get_color('BG_LIGHT')};
                     }}
                 """)
 
-            self.logger.debug("Terminal header enhanced successfully")
+                # Cache the styling for theme switching
+                self.style_cache[current_theme]["clear_button_bg"] = clear_bg
+                self.style_cache[current_theme]["clear_button_text"] = text_color
+
+            self.logger.info("Terminal enhancements applied successfully - our console is now aesthetically acceptable")
+
         except Exception as e:
-            self.logger.error(f"Failed to enhance terminal header: {str(e)}")
+            self.logger.error(f"Failed to apply terminal enhancements: {str(e)}", exc_info=True)
+
+    def _enhance_buttons(self) -> None:
+        """
+        Apply consistent styling to buttons throughout the application.
+
+        Like a designer ensuring brand consistency across a product line,
+        this method applies coherent button styling across the application.
+        """
+        try:
+            # Enhance main navigation buttons (already handled in sidebar)
+            pass
+
+        except Exception as e:
+            self.logger.error(f"Failed to enhance buttons: {str(e)}", exc_info=True)
+
+    def _enhance_progress_section(self) -> None:
+        """
+        Enhance progress section for consistent appearance.
+
+        Like tuning a dashboard's gauges for optimal readability,
+        this method ensures the progress indicators are visually coherent.
+        """
+        if not self.progress_frame:
+            return
+
+        try:
+            # Apply enhanced styling to progress frame
+            self.progress_frame.setStyleSheet(f"""
+                QFrame#ProgressFrame {{
+                    background-color: {Theme.get_color('BG_LIGHT')};
+                    border: 1px solid {Theme.get_color('BG_LIGHT')};
+                    border-radius: 12px;
+                    padding: 5px;
+                    margin: 10px 0;
+                }}
+            """)
+
+            # Find and enhance progress bar
+            progress_bar = self.progress_frame.findChild(QProgressBar)
+            if progress_bar:
+                progress_bar.setStyleSheet(f"""
+                    QProgressBar {{
+                        background-color: {Theme.get_color('BG_LIGHT')};
+                        border: none;
+                        border-radius: 3px;
+                        text-align: center;
+                        height: 6px;
+                    }}
+                    QProgressBar::chunk {{
+                        background-color: {Theme.get_color('PRIMARY')};
+                        border-radius: 3px;
+                    }}
+                """)
+
+        except Exception as e:
+            self.logger.error(f"Failed to enhance progress section: {str(e)}", exc_info=True)
+
+    def _apply_delayed_fixes(self) -> None:
+        """
+        Apply delayed fixes after the initial UI rendering.
+
+        Like an after-hours custodian fixing what wasn't quite right during
+        the day, this method applies corrections that need to happen after
+        the initial rendering cycle.
+        """
+        try:
+            # Fix terminal background color after theme switch
+            if self.terminal_output:
+                current_theme = self._get_current_theme()
+                bg_color = Theme.get_color('BG_DARK')
+
+                # Force terminal background update
+                self.terminal_output.setStyleSheet(f"""
+                    QTextEdit#TerminalOutput {{
+                        background-color: {bg_color};
+                        color: {Theme.get_color('TEXT_PRIMARY')};
+                        border: 1px solid {Theme.get_color('BG_LIGHT')};
+                        border-radius: 8px;
+                        padding: 10px;
+                        selection-background-color: {Theme.get_color('PRIMARY')};
+                        selection-color: {Theme.get_color('TEXT_PRIMARY')};
+                    }}
+                """)
+
+            # Ensure Clear button has correct colors
+            if self.clear_button:
+                current_theme = self._get_current_theme()
+                text_color = Theme.get_color('TEXT_PRIMARY')
+
+                self.clear_button.setStyleSheet(f"""
+                    QPushButton#ClearButton {{
+                        background-color: {Theme.get_color('BG_MEDIUM')};
+                        color: {text_color};
+                        border: 1px solid {Theme.get_color('BG_LIGHT')};
+                        border-radius: 6px;
+                        padding: 5px 10px;
+                        font-size: 12px;
+                    }}
+                    QPushButton#ClearButton:hover {{
+                        background-color: {Theme.get_color('BG_LIGHT')};
+                    }}
+                """)
+
+        except Exception as e:
+            self.logger.error(f"Failed to apply delayed fixes: {str(e)}", exc_info=True)
+
+    def _get_current_theme(self) -> str:
+        """
+        Get the current application theme.
+
+        Returns:
+            Current theme identifier string
+
+        Like a chameleon checking its current color, this method
+        determines the active visual theme of the application.
+        """
+        # Try to get theme from Theme class
+        try:
+            return Theme.get_current_theme()
+        except (AttributeError, Exception):
+            # Fallback methods
+            pass
+
+        # Try to get from main window
+        if hasattr(self.main_window, 'current_theme') and callable(self.main_window.current_theme):
+            try:
+                return self.main_window.current_theme()
+            except Exception:
+                pass
+
+        # Default fallback
+        return "dark"
+
+    def _enhanced_apply_theme(self, theme_id: str) -> None:
+        """
+        Enhanced theme application that ensures UI consistency.
+
+        Args:
+            theme_id: Theme identifier to apply
+
+        Like a careful artist ensuring color harmony across a canvas,
+        this method wraps the original theme application with additional
+        consistency checks.
+        """
+        # Call original implementation first
+        self._original_apply_theme(theme_id)
+
+        # Apply our enhancements after original theme is applied
+        try:
+            # Reapply specific elements that need fixing during theme switch
+
+            # Fix terminal output background
+            if self.terminal_output:
+                bg_color = Theme.get_color('BG_DARK')
+                text_color = Theme.get_color('TEXT_PRIMARY')
+
+                self.terminal_output.setStyleSheet(f"""
+                    QTextEdit#TerminalOutput {{
+                        background-color: {bg_color};
+                        color: {text_color};
+                        border: 1px solid {Theme.get_color('BG_LIGHT')};
+                        border-radius: 8px;
+                        padding: 10px;
+                        selection-background-color: {Theme.get_color('PRIMARY')};
+                        selection-color: {text_color};
+                    }}
+                """)
+
+            # Fix Clear button in light theme
+            if self.clear_button:
+                clear_bg = Theme.get_color('BG_MEDIUM')
+                text_color = Theme.get_color('TEXT_PRIMARY')
+
+                self.clear_button.setStyleSheet(f"""
+                    QPushButton#ClearButton {{
+                        background-color: {clear_bg};
+                        color: {text_color};
+                        border: 1px solid {Theme.get_color('BG_LIGHT')};
+                        border-radius: 6px;
+                        padding: 5px 10px;
+                        font-size: 12px;
+                        font-weight: normal;
+                    }}
+                    QPushButton#ClearButton:hover {{
+                        background-color: {Theme.get_color('BG_LIGHT')};
+                    }}
+                """)
+
+            # Schedule a delayed refresh for elements that need it
+            QTimer.singleShot(200, self._apply_delayed_fixes)
+
+        except Exception as e:
+            self.logger.error(f"Error in enhanced theme application: {str(e)}", exc_info=True)
 
 
-def apply_ui_enhancements(
-        main_window: QWidget,
-        sidebar_name: str = "sidebar",
-        terminal_name: str = "terminal"
-) -> None:
+def enhance_main_window(main_window: QMainWindow) -> None:
     """
-    Apply all UI enhancements to the main window and its components.
+    Apply UI enhancements to the main application window.
 
     Args:
-        main_window: The main application window
-        sidebar_name: Attribute name for the sidebar component
-        terminal_name: Attribute name for the terminal component
+        main_window: Main application window to enhance
+
+    Like a one-click digital renovation service, this function applies
+    comprehensive UI improvements to the main application window.
     """
-    logger = logging.getLogger(__name__)
-    logger.info("Applying comprehensive UI enhancements to Moinsy")
-
-    ui_enhancer = UIEnhancer(logger)
-
-    try:
-        # Apply theme enhancements
-        ui_enhancer.apply_theme_enhancements()
-
-        # Apply sidebar enhancements if available
-        if hasattr(main_window, sidebar_name):
-            sidebar = getattr(main_window, sidebar_name)
-            sidebar_enhancer = SidebarEnhancer(sidebar, logger)
-            sidebar_enhancer.apply_enhancements()
-        else:
-            logger.warning(f"Sidebar '{sidebar_name}' not found - skipping sidebar enhancements")
-
-        # Apply terminal enhancements if available
-        if hasattr(main_window, terminal_name):
-            terminal = getattr(main_window, terminal_name)
-            terminal_enhancer = TerminalEnhancer(terminal, logger)
-            terminal_enhancer.apply_enhancements()
-        else:
-            logger.warning(f"Terminal '{terminal_name}' not found - skipping terminal enhancements")
-
-        logger.info("UI enhancements applied successfully")
-
-    except Exception as e:
-        logger.error(f"Failed to apply UI enhancements: {str(e)}")
-        # Even if we fail, we don't want to crash the application
+    enhancer = UIEnhancer(main_window)
+    enhancer.enhance_ui()
