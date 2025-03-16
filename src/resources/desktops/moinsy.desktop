@@ -1,0 +1,10 @@
+[Desktop Entry]
+StartupWMClass=python3
+Version=1.1
+Type=Application
+Name=Moinsy
+Comment=Made by femdres
+Icon=/opt/moinsy/src/resources/icons/moinsy.png
+Exec=/opt/moinsy/run-moinsy.sh
+Categories=Development;Utility;
+Terminal=false

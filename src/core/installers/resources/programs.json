@@ -1,0 +1,114 @@
+{
+    "categories": {
+        "internet": {
+            "name": "Internet & Communication",
+            "programs": {
+                "chrome": {
+                    "name": "Google Chrome",
+                    "type": "flatpak",
+                    "package": "com.google.Chrome"
+                },
+                "discord": {
+                    "name": "Discord (Vencord)",
+                    "type": "flatpak",
+                    "package": "dev.vencord.Vesktop"
+                },
+                "thunderbird": {
+                    "name": "Thunderbird",
+                    "type": "flatpak",
+                    "package": "org.mozilla.Thunderbird"
+                }
+            }
+        },
+        "development": {
+            "name": "Development Tools",
+            "programs": {
+                "pycharm": {
+                    "name": "PyCharm Community",
+                    "type": "flatpak",
+                    "package": "com.jetbrains.PyCharm-Community"
+                }
+            }
+        },
+        "media": {
+            "name": "Media & Entertainment",
+            "programs": {
+                "vlc": {
+                    "name": "VLC Media Player",
+                    "type": "flatpak",
+                    "package": "org.videolan.VLC"
+                },
+                "spotify": {
+                    "name": "Spotify",
+                    "type": "flatpak",
+                    "package": "com.spotify.Client"
+                },
+                "tidal": {
+                    "name": "Tidal Hi-Fi",
+                    "type": "flatpak",
+                    "package": "com.mastermindzh.tidal-hifi"
+                }
+            }
+        },
+        "audio": {
+            "name": "Audio Tools",
+            "programs": {
+                "audacity": {
+                    "name": "Audacity",
+                    "type": "flatpak",
+                    "package": "org.audacityteam.Audacity"
+                },
+                "easy-effects": {
+                    "name": "Easy Effects",
+                    "type": "flatpak",
+                    "package": "com.github.wwmm.easyeffects"
+                },
+                "pavucontrol": {
+                    "name": "PulseAudio Volume Control",
+                    "type": "apt",
+                    "package": "pavucontrol"
+                }
+            }
+        },
+        "graphics": {
+            "name": "Graphics & Design",
+            "programs": {
+                "gimp": {
+                    "name": "GIMP",
+                    "type": "flatpak",
+                    "package": "org.gimp.GIMP"
+                }
+            }
+        },
+        "office": {
+            "name": "Office & Productivity",
+            "programs": {
+                "onlyoffice": {
+                    "name": "ONLYOFFICE Desktop Editors",
+                    "type": "flatpak",
+                    "package": "org.onlyoffice.desktopeditors"
+                }
+            }
+        },
+        "utilities": {
+            "name": "System Utilities",
+            "programs": {
+                "guvcview": {
+                    "name": "guvcview",
+                    "type": "apt",
+                    "package": "guvcview"
+                },
+                "menulibre": {
+                    "name": "MenuLibre",
+                    "type": "apt",
+                    "package": "menulibre"
+                },
+                "obs-studio": {
+                    "name": "OBS Studio",
+                    "type": "flatpak",
+                    "package": "com.obsproject.Studio"
+                }
+            }
+        }
+    }
+}

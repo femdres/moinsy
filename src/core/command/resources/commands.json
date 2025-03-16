@@ -1,0 +1,194 @@
+{
+  "categories": [
+    {
+      "id": "navigation",
+      "name": "Navigation",
+      "icon": "🧭",
+      "commands": [
+        {
+          "name": "cd",
+          "description": "Change the current working directory to a specified path. If no directory is specified, changes to the user's home directory.",
+          "syntax": "cd [options] [directory]",
+          "options": [
+            {"flag": "-L", "description": "Follow symbolic links (default behavior)"},
+            {"flag": "-P", "description": "Use physical directory structure without following symbolic links"},
+            {"flag": "-e", "description": "Exit with status 1 if the directory does not exist"},
+            {"flag": "--help", "description": "Display help information and exit"}
+          ],
+          "examples": [
+            {"command": "cd /home/user/Documents", "description": "Change to the Documents directory"},
+            {"command": "cd ..", "description": "Move up one directory level"},
+            {"command": "cd ~", "description": "Change to home directory"},
+            {"command": "cd -", "description": "Change to previous directory"}
+          ]
+        },
+        {
+          "name": "pwd",
+          "description": "Print the full pathname of the current working directory.",
+          "syntax": "pwd [options]",
+          "options": [
+            {"flag": "-L", "description": "Print the logical current directory (with symbolic links)"},
+            {"flag": "-P", "description": "Print the physical directory (all symbolic links resolved)"}
+          ],
+          "examples": [
+            {"command": "pwd", "description": "Display the current directory path"},
+            {"command": "pwd -P", "description": "Display the physical path without symlinks"}
+          ]
+        },
+        {
+          "name": "ls",
+          "description": "List directory contents with information about the files and directories.",
+          "syntax": "ls [options] [file/directory]",
+          "options": [
+            {"flag": "-a", "description": "Show all files including hidden files (starting with .)"},
+            {"flag": "-l", "description": "Use long listing format with permissions and ownership details"},
+            {"flag": "-h", "description": "Print file sizes in human-readable format"},
+            {"flag": "-t", "description": "Sort by modification time, newest first"},
+            {"flag": "--color", "description": "Colorize the output by file type"}
+          ],
+          "examples": [
+            {"command": "ls", "description": "List files in the current directory"},
+            {"command": "ls -la", "description": "List all files in long format"},
+            {"command": "ls -lh /var/log", "description": "List files in /var/log with human-readable sizes"},
+            {"command": "ls -lt", "description": "List files sorted by modification time"}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "files",
+      "name": "Files & Directories",
+      "icon": "📁",
+      "commands": [
+        {
+          "name": "cp",
+          "description": "Copy files and directories from source to destination.",
+          "syntax": "cp [options] source destination",
+          "options": [
+            {"flag": "-r", "description": "Copy directories recursively"},
+            {"flag": "-i", "description": "Prompt before overwriting existing files"},
+            {"flag": "-v", "description": "Verbose mode, explain what is being done"},
+            {"flag": "-p", "description": "Preserve file attributes (permissions, timestamps)"}
+          ],
+          "examples": [
+            {"command": "cp file.txt backup/", "description": "Copy file.txt to backup directory"},
+            {"command": "cp -r documents/ backup/", "description": "Copy documents directory recursively"},
+            {"command": "cp -ivp *.jpg images/", "description": "Copy all jpg files with prompts and verbose output"}
+          ]
+        },
+        {
+          "name": "mv",
+          "description": "Move or rename files and directories.",
+          "syntax": "mv [options] source destination",
+          "options": [
+            {"flag": "-i", "description": "Prompt before overwriting existing files"},
+            {"flag": "-f", "description": "Force move without prompting"},
+            {"flag": "-v", "description": "Verbose mode, explain what is being done"},
+            {"flag": "-n", "description": "Do not overwrite existing files"}
+          ],
+          "examples": [
+            {"command": "mv file.txt newname.txt", "description": "Rename file.txt to newname.txt"},
+            {"command": "mv file.txt documents/", "description": "Move file.txt to documents directory"},
+            {"command": "mv -iv *.mp3 music/", "description": "Move all mp3 files with prompts"}
+          ]
+        },
+        {
+          "name": "rm",
+          "description": "Remove files or directories. Use with caution - deleted files cannot be recovered easily.",
+          "syntax": "rm [options] file/directory",
+          "options": [
+            {"flag": "-r", "description": "Remove directories and their contents recursively"},
+            {"flag": "-f", "description": "Force removal without prompting, ignore nonexistent files"},
+            {"flag": "-i", "description": "Prompt before each removal"},
+            {"flag": "-v", "description": "Verbose mode, explain what is being done"}
+          ],
+          "examples": [
+            {"command": "rm file.txt", "description": "Delete a single file"},
+            {"command": "rm -i *.tmp", "description": "Delete all tmp files with confirmation"},
+            {"command": "rm -rf old_directory/", "description": "Force delete directory and all contents"}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "system",
+      "name": "System Management",
+      "icon": "⚙️",
+      "commands": [
+        {
+          "name": "systemctl",
+          "description": "Control the systemd system and service manager. Used to manage system services.",
+          "syntax": "systemctl [options] command [unit]",
+          "options": [
+            {"flag": "--user", "description": "Run as user service manager, not system service manager"},
+            {"flag": "--system", "description": "Run as system service manager (default)"},
+            {"flag": "-H", "description": "Execute operation on remote host"},
+            {"flag": "--no-pager", "description": "Do not pipe output into a pager"}
+          ],
+          "examples": [
+            {"command": "systemctl status apache2", "description": "Check status of Apache web server"},
+            {"command": "systemctl start mysql", "description": "Start MySQL database service"},
+            {"command": "systemctl enable ssh", "description": "Enable SSH service to start on boot"},
+            {"command": "systemctl restart networking", "description": "Restart networking service"}
+          ]
+        },
+        {
+          "name": "apt",
+          "description": "Advanced Package Tool, the main package management system in Debian-based distributions.",
+          "syntax": "apt [options] command",
+          "options": [
+            {"flag": "-y", "description": "Assume yes and avoid prompts"},
+            {"flag": "-q", "description": "Quiet mode; produces output suitable for logging"},
+            {"flag": "--no-install-recommends", "description": "Don't install recommended packages"},
+            {"flag": "--reinstall", "description": "Reinstall packages even if they are already installed"}
+          ],
+          "examples": [
+            {"command": "apt update", "description": "Update package lists"},
+            {"command": "apt install firefox", "description": "Install Firefox browser"},
+            {"command": "apt remove vlc", "description": "Remove VLC media player"},
+            {"command": "apt upgrade", "description": "Upgrade all installed packages"}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "monitoring",
+      "name": "System Monitoring",
+      "icon": "📊",
+      "commands": [
+        {
+          "name": "top",
+          "description": "Display and update sorted information about processes.",
+          "syntax": "top [options]",
+          "options": [
+            {"flag": "-b", "description": "Batch mode operation"},
+            {"flag": "-n", "description": "Number of iterations before terminating"},
+            {"flag": "-p", "description": "Monitor specific process IDs"},
+            {"flag": "-u", "description": "Monitor specific username"}
+          ],
+          "examples": [
+            {"command": "top", "description": "Show system processes in real-time"},
+            {"command": "top -u user1", "description": "Show processes for user1 only"},
+            {"command": "top -p 1234", "description": "Monitor process with PID 1234"}
+          ]
+        },
+        {
+          "name": "free",
+          "description": "Display amount of free and used memory in the system.",
+          "syntax": "free [options]",
+          "options": [
+            {"flag": "-h", "description": "Show output in human-readable format"},
+            {"flag": "-s", "description": "Update display every [delay] seconds"},
+            {"flag": "-t", "description": "Display total for RAM + swap"},
+            {"flag": "-w", "description": "Wide output format"}
+          ],
+          "examples": [
+            {"command": "free -h", "description": "Show memory usage in human-readable format"},
+            {"command": "free -s 5", "description": "Update memory usage every 5 seconds"},
+            {"command": "free -ht", "description": "Show human-readable total for RAM and swap"}
+          ]
+        }
+      ]
+    }
+  ]
+}
