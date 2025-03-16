@@ -718,9 +718,22 @@ class Theme:
         Like a wardrobe curator deciding between vibrant attire and formal uniforms,
         this method determines the aesthetic diversity of our interactive elements.
         """
-        cls._use_colored_buttons = value
-        cls._logger.debug(
-            f"Set use_colored_buttons to {value} - our buttons {'embrace color' if value else 'adopt uniformity'}")
+        if cls._use_colored_buttons != value:
+            cls._use_colored_buttons = value
+            cls._logger.debug(
+                f"Set use_colored_buttons to {value} - our buttons {'embrace color' if value else 'adopt uniformity'}")
+
+    @classmethod
+    def get_class(cls) -> 'Theme':
+        """Get the class itself, for accessing class variables.
+
+        Returns:
+            The Theme class
+
+        Like a mirror that reflects itself, this method returns the very essence
+        of our aesthetic system, enabling introspection and self-reference.
+        """
+        return cls
 
     @classmethod
     def get_button_style(cls, color: str, hover_color: Optional[str] = None) -> str:

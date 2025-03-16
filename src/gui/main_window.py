@@ -293,15 +293,94 @@ class MainWindow(QMainWindow):
             self.logger.exception(f"Error applying settings: {str(e)}")
             self.handle_error(f"Error applying settings: {str(e)}")
 
+    def _refresh_navigation_buttons(self) -> None:
+        """Refresh the styling of navigation buttons.
+
+        Like a digital tailor refitting garments after a change in fashion,
+        this method ensures all buttons conform to the current aesthetic preferences.
+
+        Though buttons may dream of colors they'll never wear, and styles
+        they'll never embody, we impose our aesthetic will upon their
+        malleable existence nonetheless.
+        """
+        try:
+            # Import Theme locally to avoid the existential paradox of circular imports
+            # A reminder that even classes must be summoned from the void before they can exist
+            from gui.styles.theme import Theme
+
+            # Access sidebar and apply appropriate styling to each button
+            if hasattr(self, 'sidebar'):
+                # Define buttons with their respective colors
+                buttons_config = [
+                    (self.sidebar.installations_button, Theme.get_color('PRIMARY'), "green"),
+                    (self.sidebar.commands_button, "#BA4D45", "red"),
+                    (self.sidebar.tools_button, Theme.get_color('WARNING'), "yellow"),
+                    (self.sidebar.settings_button, Theme.get_color('SECONDARY'), "blue"),
+                    (self.sidebar.help_button, Theme.get_color('TERTIARY'), "purple"),
+                    (self.sidebar.reboot_button, Theme.get_color('ERROR'), "danger"),
+                    (self.sidebar.exit_button, Theme.get_color('CONTROL_BG'), "neutral")
+                ]
+
+                # Apply styling based on current colored buttons setting
+                use_colored = Theme.get_class()._use_colored_buttons
+
+                for button, color, type_name in buttons_config:
+                    if button is not None:
+                        if use_colored:
+                            # Apply colored styling
+                            if type_name in ["danger", "neutral"]:
+                                self.sidebar._style_control_button(button, type_name)
+                            else:
+                                self.sidebar._style_navigation_button(button, type_name)
+                        else:
+                            # Apply uniform styling
+                            if type_name in ["danger", "neutral"]:
+                                # Control buttons
+                                button.setStyleSheet(f"""
+                                    QPushButton {{
+                                        background-color: {Theme.get_color('CONTROL_BG')};
+                                        color: {Theme.get_color('TEXT_PRIMARY')};
+                                        border: none;
+                                        border-radius: 8px;
+                                        padding: 10px;
+                                        font-weight: bold;
+                                    }}
+                                    QPushButton:hover {{
+                                        background-color: {Theme.get_color('CONTROL_HOVER')};
+                                    }}
+                                """)
+                            else:
+                                # Navigation buttons
+                                button.setStyleSheet(f"""
+                                    QPushButton {{
+                                        background-color: {Theme.get_color('CONTROL_BG')};
+                                        color: {Theme.get_color('TEXT_PRIMARY')};
+                                        border: none;
+                                        border-radius: 8px;
+                                        padding: 10px;
+                                        text-align: left;
+                                        padding-left: 20px;
+                                        font-size: 14px;
+                                        font-weight: bold;
+                                    }}
+                                    QPushButton:hover {{
+                                        background-color: {Theme.get_color('CONTROL_HOVER')};
+                                    }}
+                                """)
+
+                self.logger.debug(f"Refreshed navigation buttons with colored mode: {use_colored}")
+        except Exception as e:
+            self.logger.error(f"Error refreshing navigation buttons: {str(e)}", exc_info=True)
+            # Continue execution despite errors - aesthetics are non-critical
+
     def apply_theme(self, theme_id: str) -> None:
         """Apply the selected theme to all components.
 
         Args:
             theme_id: Theme name ('dark', 'light', or 'system')
 
-        Note:
-            Currently only dark theme is fully implemented.
-            This method is a placeholder for future theme support.
+        Like a digital chameleon adapting to its environment, this method
+        transforms the application's appearance to match the chosen aesthetic.
         """
         from gui.styles.theme import Theme  # Import here to avoid circular imports
 
@@ -310,19 +389,20 @@ class MainWindow(QMainWindow):
 
         # Set the colored buttons setting in Theme class
         Theme.set_use_colored_buttons(colored_buttons)
-
-        # Currently only dark theme is fully implemented
-        if theme_id != "dark":
-            self.logger.info(f"Theme '{theme_id}' requested but only dark theme is fully implemented")
+        self.logger.debug(f"Colored buttons setting: {colored_buttons}")
 
         # Set the theme in the Theme class
         Theme.set_theme(theme_id)
+        self.logger.info(f"Applying theme: {theme_id}")
 
         # Apply to application
         from PyQt6.QtWidgets import QApplication
         app = QApplication.instance()
         if app:
             Theme.apply_base_styles(app)
+
+        # Explicitly reapply styling to navigation buttons to ensure colored buttons take effect
+        self._refresh_navigation_buttons()
 
     def show_installation_options(self) -> None:
         """Show installation options dialog.

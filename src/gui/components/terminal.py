@@ -272,14 +272,15 @@ class TerminalArea(QWidget):
             # Get appropriate background color based on theme
             theme_id = Theme.get_current_theme()
             if theme_id == Theme.THEME_LIGHT:
-                # Light theme uses a light background
-                bg_color = Theme.get_color('BG_LIGHT')
+                # Light theme uses a light gray background that's darker than sidebar buttons
+                bg_color = "#E0E0E0"  # A medium-light gray, darker than typical light theme buttons
             elif theme_id == Theme.THEME_HIGH_CONTRAST:
                 # High contrast theme uses a black background
                 bg_color = "#000000"
             else:
-                # Dark theme (default) uses a dark background
-                bg_color = Theme.get_color('BG_DARK')
+                # Dark theme (default) uses a dark background that's darker than sidebar but not pure black
+                # Sidebar is typically BG_MEDIUM, so we need something between that and black
+                bg_color = "#323234"  # Darker than BG_DARK but not pure black
 
             # Style the output area with theme-appropriate background
             self.output.setStyleSheet(f"""

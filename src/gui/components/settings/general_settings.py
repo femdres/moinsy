@@ -139,7 +139,6 @@ class GeneralSettingsTab(QWidget):
             self.theme_description.setWordWrap(True)
             appearance_layout.addRow("", self.theme_description)
 
-            # Use colored buttons option
             self.colored_buttons_checkbox = QCheckBox("Use colored buttons")
             self.colored_buttons_checkbox.setStyleSheet("""
                         QCheckBox {
