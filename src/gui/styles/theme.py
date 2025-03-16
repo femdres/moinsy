@@ -705,3 +705,79 @@ class Theme:
         except Exception as e:
             cls._logger.error(f"Error creating theme variant: {str(e)}")
             return cls.THEME_DARK  # Return default theme as fallback
+
+    _use_colored_buttons = True  # Default to true
+
+    @classmethod
+    def set_use_colored_buttons(cls, value: bool) -> None:
+        """Set whether to use colored buttons.
+
+        Args:
+            value: True to use colored buttons, False for standard styling
+
+        Like a wardrobe curator deciding between vibrant attire and formal uniforms,
+        this method determines the aesthetic diversity of our interactive elements.
+        """
+        cls._use_colored_buttons = value
+        cls._logger.debug(
+            f"Set use_colored_buttons to {value} - our buttons {'embrace color' if value else 'adopt uniformity'}")
+
+    @classmethod
+    def get_button_style(cls, color: str, hover_color: Optional[str] = None) -> str:
+        """Get styling for buttons with specified colors.
+
+        Args:
+            color: Base button color
+            hover_color: Optional hover state color
+
+        Returns:
+            Button styling as a string
+
+        Like creating a blueprint for interactive elements,
+        this method defines how buttons respond to user interaction.
+        """
+        colors = cls.COLORS.get(cls._current_theme, cls.COLORS[cls.THEME_DARK])
+
+        # Check if colored buttons are enabled
+        if not cls._use_colored_buttons:
+            # Use standard button styling instead of colored
+            return f"""
+                    QPushButton {{
+                        background-color: {colors['CONTROL_BG']};
+                        color: {colors['TEXT_PRIMARY']};
+                        border: none;
+                        border-radius: 8px;
+                        padding: 8px 16px;
+                        font-weight: bold;
+                    }}
+                    QPushButton:hover {{
+                        background-color: {colors['CONTROL_HOVER']};
+                    }}
+                    QPushButton:pressed {{
+                        background-color: {cls.adjust_color(colors['CONTROL_HOVER'], -20)};
+                    }}
+                """
+
+        # Original colored button styling logic
+        if not hover_color:
+            hover_color = cls.adjust_color(color, -20)
+
+        # Calculate pressed color
+        pressed_color = cls.adjust_color(hover_color, -20)
+
+        return f"""
+                QPushButton {{
+                    background-color: {color};
+                    color: {colors['TEXT_PRIMARY']};
+                    border: none;
+                    border-radius: 8px;
+                    padding: 8px 16px;
+                    font-weight: bold;
+                }}
+                QPushButton:hover {{
+                    background-color: {hover_color};
+                }}
+                QPushButton:pressed {{
+                    background-color: {pressed_color};
+                }}
+            """

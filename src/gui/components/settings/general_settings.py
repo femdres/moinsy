@@ -139,6 +139,34 @@ class GeneralSettingsTab(QWidget):
             self.theme_description.setWordWrap(True)
             appearance_layout.addRow("", self.theme_description)
 
+            # Use colored buttons option
+            self.colored_buttons_checkbox = QCheckBox("Use colored buttons")
+            self.colored_buttons_checkbox.setStyleSheet("""
+                        QCheckBox {
+                            color: white;
+                        }
+                        QCheckBox::indicator {
+                            width: 18px; 
+                            height: 18px;
+                            border-radius: 3px;
+                            border: 1px solid #888888;
+                        }
+                        QCheckBox::indicator:checked {
+                            background-color: #4CAF50;
+                            border: 1px solid #4CAF50;
+                        }
+                    """)
+            appearance_layout.addRow("", self.colored_buttons_checkbox)
+
+            # Colored buttons description
+            colored_buttons_desc = QLabel(
+                "When enabled, buttons will use theme colors. When disabled, buttons will use a uniform style. "
+                "Like choosing between a vibrant wardrobe or a monochrome uniform."
+            )
+            colored_buttons_desc.setStyleSheet("color: #888888; font-size: 12px;")
+            colored_buttons_desc.setWordWrap(True)
+            appearance_layout.addRow("", colored_buttons_desc)
+
             # Window Size Settings - dimensions in a digital void
             window_group = QGroupBox("Window")
             window_group.setStyleSheet("""
@@ -377,6 +405,10 @@ class GeneralSettingsTab(QWidget):
                 self._update_theme_description("dark")
                 self.logger.warning(f"Unknown theme '{theme}', falling back to dark theme")
 
+            # Colored buttons - whether they have color
+            colored_buttons = self.config_manager.get_setting("general", "colored_buttons", True)
+            self.colored_buttons_checkbox.setChecked(colored_buttons)
+
             # Window size - the boundaries of our virtual existence
             window_size = self.config_manager.get_setting("general", "window_size", {"width": 1200, "height": 950})
             self.window_width_spin.setValue(window_size.get("width", 1200))
@@ -415,11 +447,6 @@ class GeneralSettingsTab(QWidget):
             )
 
     def _store_original_values(self) -> None:
-        """Store the original values for detecting changes.
-
-        A snapshot of our initial state, the digital equivalent of
-        before-and-after photos that never quite capture the true transformation.
-        """
         try:
             self.original_values = {
                 "theme": self.theme_combo.currentData(),
@@ -429,7 +456,8 @@ class GeneralSettingsTab(QWidget):
                 "terminal_font_size": self.terminal_font_size_spin.value(),
                 "terminal_buffer_size": self.terminal_buffer_size_spin.value(),
                 "show_timestamps": self.timestamp_checkbox.isChecked(),
-                "autostart": self.autostart_checkbox.isChecked()
+                "autostart": self.autostart_checkbox.isChecked(),
+                "colored_buttons": self.colored_buttons_checkbox.isChecked()  # Add this line
             }
             self.logger.debug("Original settings values stored - a baseline for measuring change")
         except Exception as e:
@@ -478,6 +506,9 @@ class GeneralSettingsTab(QWidget):
             theme_index = self.theme_combo.currentIndex()
             theme_value = self.theme_combo.itemData(theme_index)
             self.config_manager.set_setting("general", "theme", theme_value)
+
+            # Colored buttons - whether they have colors
+            self.config_manager.set_setting("general", "colored_buttons", self.colored_buttons_checkbox.isChecked())
 
             # Window size - defining the boundaries of our virtual existence
             window_size = {

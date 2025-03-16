@@ -293,11 +293,11 @@ class MainWindow(QMainWindow):
             self.logger.exception(f"Error applying settings: {str(e)}")
             self.handle_error(f"Error applying settings: {str(e)}")
 
-    def apply_theme(self, theme: str) -> None:
+    def apply_theme(self, theme_id: str) -> None:
         """Apply the selected theme to all components.
 
         Args:
-            theme: Theme name ('dark', 'light', or 'system')
+            theme_id: Theme name ('dark', 'light', or 'system')
 
         Note:
             Currently only dark theme is fully implemented.
@@ -305,12 +305,18 @@ class MainWindow(QMainWindow):
         """
         from gui.styles.theme import Theme  # Import here to avoid circular imports
 
+        # Get colored buttons setting
+        colored_buttons = self.config_manager.get_setting("general", "colored_buttons", True)
+
+        # Set the colored buttons setting in Theme class
+        Theme.set_use_colored_buttons(colored_buttons)
+
         # Currently only dark theme is fully implemented
-        if theme != "dark":
-            self.logger.info(f"Theme '{theme}' requested but only dark theme is fully implemented")
+        if theme_id != "dark":
+            self.logger.info(f"Theme '{theme_id}' requested but only dark theme is fully implemented")
 
         # Set the theme in the Theme class
-        Theme.set_theme(theme)
+        Theme.set_theme(theme_id)
 
         # Apply to application
         from PyQt6.QtWidgets import QApplication

@@ -269,10 +269,22 @@ class TerminalArea(QWidget):
             # Apply font to output area
             self.output.setFont(font)
 
-            # Style the output area
+            # Get appropriate background color based on theme
+            theme_id = Theme.get_current_theme()
+            if theme_id == Theme.THEME_LIGHT:
+                # Light theme uses a light background
+                bg_color = Theme.get_color('BG_LIGHT')
+            elif theme_id == Theme.THEME_HIGH_CONTRAST:
+                # High contrast theme uses a black background
+                bg_color = "#000000"
+            else:
+                # Dark theme (default) uses a dark background
+                bg_color = Theme.get_color('BG_DARK')
+
+            # Style the output area with theme-appropriate background
             self.output.setStyleSheet(f"""
                 QTextEdit#TerminalOutput {{
-                    background-color: {Theme.get_color('BG_DARK')};
+                    background-color: {bg_color};
                     color: {Theme.get_color('TEXT_PRIMARY')};
                     border: none;
                     border-radius: 12px;
@@ -286,7 +298,7 @@ class TerminalArea(QWidget):
             # Style scrollbars
             self._style_scrollbars(self.output.verticalScrollBar())
 
-            self.logger.debug("Applied output styling")
+            self.logger.debug("Applied output styling - the digital canvas reconfigured")
         except Exception as e:
             self.logger.error(f"Error applying output styling: {str(e)}")
 
