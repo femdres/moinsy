@@ -17,8 +17,6 @@ Moinsy is a modern, modular installation and system management utility for Linux
 
 ## Screenshots
 
-![Screenshot from 2025-03-16 13-16-02.png](../../home/femdres/Screenshots/Screenshot%20from%202025-03-16%2013-16-02.png)
-
 ## Requirements
 
 - A Debian-based Linux distribution (Ubuntu, Linux Mint, etc.)
@@ -30,11 +28,14 @@ Moinsy is a modern, modular installation and system management utility for Linux
 ### 1. Clone the repository
 
 ```bash
+cd ~/Downloads
 git clone https://github.com/femdres/moinsy.git
 cd moinsy
 ```
 
 ### 2. Run the installer script
+
+![Configure Example](src/resources/icons/configure.png)
 
 ```bash
 chmod +x configure.sh

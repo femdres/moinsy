@@ -193,66 +193,33 @@ class TerminalArea(QWidget):
             self.logger.error(f"Error applying theme to terminal: {str(e)}")
 
     def apply_base_styling(self) -> None:
-        """Apply base styling to the terminal."""
+        """Apply base styling to the terminal.
+
+        Like applying a dark coat of paint to the digital canvas where our
+        expressions of command and output will dance their existential ballet,
+        we set the stage for our terminal's performance - black for the
+        container, gray for the content.
+        """
         try:
-            # Set container styling
+            # Set container styling with the terminal area background (BLACK)
             self.setStyleSheet(f"""
                 QWidget#TerminalArea {{
-                    background-color: {Theme.get_color('BG_DARK')};
+                    background-color: {Theme.get_color('TERMINAL_AREA_BG')};
                 }}
             """)
-            self.logger.debug("Applied base styling to terminal area")
+            self.logger.debug("Applied base styling to terminal area - the black void awaits our textual projections")
         except Exception as e:
             self.logger.error(f"Error applying base styling: {str(e)}")
-
-    def apply_header_styling(self) -> None:
-        """Apply styling to the terminal header."""
-        try:
-            # Find header components
-            header = self.findChild(QFrame, "TerminalHeader")
-            title = self.findChild(QLabel, "TerminalTitle")
-            clear_button = self.findChild(QPushButton, "ClearButton")
-
-            # Style header
-            if header:
-                header.setStyleSheet(f"""
-                    QFrame#TerminalHeader {{
-                        background-color: transparent;
-                        border: none;
-                    }}
-                """)
-
-            # Style title
-            if title:
-                title.setStyleSheet(f"""
-                    QLabel#TerminalTitle {{
-                        color: {Theme.get_color('TEXT_SECONDARY')};
-                        font-size: 14px;
-                        font-weight: bold;
-                    }}
-                """)
-
-            # Style clear button
-            if clear_button:
-                clear_button.setStyleSheet(f"""
-                    QPushButton#ClearButton {{
-                        background-color: {Theme.get_color('BG_MEDIUM')};
-                        border-radius: 6px;
-                        font-size: 12px;
-                        font-weight: normal;
-                        color: {Theme.get_color('TEXT_PRIMARY')};
-                    }}
-                    QPushButton#ClearButton:hover {{
-                        background-color: {Theme.get_color('BG_LIGHT')};
-                    }}
-                """)
-
-            self.logger.debug("Applied header styling")
-        except Exception as e:
-            self.logger.error(f"Error applying header styling: {str(e)}")
+            # Continue with default styling, allowing the void to remain unstylized
 
     def apply_output_styling(self) -> None:
-        """Apply styling to the terminal output area."""
+        """Apply styling to the terminal output area.
+
+        Like a digital artisan crafting the perfect viewport into the machine's
+        consciousness, we shape the appearance of our textual communication channel,
+        fully aware that no amount of styling can bridge the gap between human
+        intention and computational interpretation.
+        """
         try:
             # Get the font to use
             try:
@@ -269,24 +236,15 @@ class TerminalArea(QWidget):
             # Apply font to output area
             self.output.setFont(font)
 
-            # Get appropriate background color based on theme
-            theme_id = Theme.get_current_theme()
-            if theme_id == Theme.THEME_LIGHT:
-                # Light theme uses a light gray background that's darker than sidebar buttons
-                bg_color = "#E0E0E0"  # A medium-light gray, darker than typical light theme buttons
-            elif theme_id == Theme.THEME_HIGH_CONTRAST:
-                # High contrast theme uses a black background
-                bg_color = "#000000"
-            else:
-                # Dark theme (default) uses a dark background that's darker than sidebar but not pure black
-                # Sidebar is typically BG_MEDIUM, so we need something between that and black
-                bg_color = "#323234"  # Darker than BG_DARK but not pure black
+            # Use theme-defined terminal colors - GRAY for terminal output
+            bg_color = Theme.get_color('TERMINAL_BG')  # Gray for the terminal itself
+            text_color = Theme.get_color('TEXT_PRIMARY')
 
-            # Style the output area with theme-appropriate background
+            # Style the output area with our gray terminal background
             self.output.setStyleSheet(f"""
                 QTextEdit#TerminalOutput {{
                     background-color: {bg_color};
-                    color: {Theme.get_color('TEXT_PRIMARY')};
+                    color: {text_color};
                     border: none;
                     border-radius: 12px;
                     padding: 15px;
@@ -296,12 +254,165 @@ class TerminalArea(QWidget):
                 }}
             """)
 
+            # Force update through palette as well - belt and suspenders approach
+            palette = self.output.palette()
+            palette.setColor(self.output.backgroundRole(), QColor(bg_color))
+            palette.setColor(QPalette.ColorRole.Base, QColor(bg_color))
+            palette.setColor(self.output.foregroundRole(), QColor(text_color))
+            self.output.setPalette(palette)
+
             # Style scrollbars
             self._style_scrollbars(self.output.verticalScrollBar())
 
-            self.logger.debug("Applied output styling - the digital canvas reconfigured")
+            self.logger.debug(
+                "Applied output styling - our gray digital canvas awaits characters against the black void")
         except Exception as e:
             self.logger.error(f"Error applying output styling: {str(e)}")
+            # The void remains unstyled, a reflection of our failure to impose order
+
+    def apply_header_styling(self) -> None:
+        """Apply styling to the terminal header."""
+        try:
+            # Find header components
+            header = self.findChild(QFrame, "TerminalHeader")
+            title = self.findChild(QLabel, "TerminalTitle")
+            clear_button = self.findChild(QPushButton, "ClearButton")
+
+            # Style header with BLACK background
+            if header:
+                header.setStyleSheet(f"""
+                    QFrame#TerminalHeader {{
+                        background-color: {Theme.get_color('TERMINAL_AREA_BG')};
+                        border: none;
+                    }}
+                """)
+
+            # Style title
+            if title:
+                title.setStyleSheet(f"""
+                    QLabel#TerminalTitle {{
+                        background-color: {Theme.get_color('TERMINAL_BG')};
+                        border-radius: 6px;
+                        font-size: 12px;
+                        font-weight: normal;
+                        color: {Theme.get_color('TEXT_PRIMARY')};
+                    }}
+                    QPushButton#TerminalTitle:hover {{
+                        background-color: {Theme.get_color('BG_LIGHT')};
+                    }}
+                """)
+
+            # Style clear button with GRAY background
+            if clear_button:
+                clear_button.setStyleSheet(f"""
+                    QPushButton#ClearButton {{
+                        background-color: {Theme.get_color('TERMINAL_BG')};
+                        border-radius: 6px;
+                        font-size: 12px;
+                        font-weight: normal;
+                        color: {Theme.get_color('TEXT_PRIMARY')};
+                    }}
+                    QPushButton#ClearButton:hover {{
+                        background-color: {Theme.get_color('BG_LIGHT')};
+                    }}
+                """)
+
+            self.logger.debug("Applied header styling - title and controls properly colored")
+        except Exception as e:
+            self.logger.error(f"Error applying header styling: {str(e)}")
+
+    def apply_input_styling(self) -> None:
+        """Apply styling to the terminal input area."""
+        try:
+            # Get components
+            input_container = self.findChild(QFrame, "InputContainer")
+
+            # Style input container with GRAY background
+            if input_container:
+                input_container.setStyleSheet(f"""
+                    QFrame#InputContainer {{
+                        background-color: {Theme.get_color('TERMINAL_BG')};
+                        border-radius: 8px;
+                    }}
+                """)
+
+            # Style prompt
+            if hasattr(self, 'prompt_label'):
+                self.prompt_label.setStyleSheet(f"""
+                    QLabel#PromptLabel {{
+                        color: {Theme.get_color('SUCCESS')};
+                        font-family: 'Consolas', 'Courier New', monospace;
+                        font-weight: bold;
+                        font-size: 14px;
+                        background-color: transparent;
+                        padding-left: 10px;
+                    }}
+                """)
+
+            # Style input field
+            if hasattr(self, 'input_entry'):
+                # Get the font to use
+                try:
+                    font = Theme.get_font('MONO')
+                except (AttributeError, KeyError):
+                    # Fallback to default monospace font
+                    font = QFont('Consolas', 13)
+
+                # Apply font
+                self.input_entry.setFont(font)
+
+                # Apply styling
+                self.input_entry.setStyleSheet(f"""
+                    QLineEdit#InputEntry {{
+                        background-color: transparent;
+                        color: {Theme.get_color('SUCCESS')};
+                        border: none;
+                        font-size: 14px;
+                        padding: 8px 12px;
+                        selection-background-color: {Theme.get_color('PRIMARY')};
+                        selection-color: {Theme.get_color('TEXT_PRIMARY')};
+                    }}
+                """)
+
+            self.logger.debug("Applied input styling - command entry field properly colored")
+        except Exception as e:
+            self.logger.error(f"Error applying input styling: {str(e)}")
+
+    def _apply_delayed_fixes(self) -> None:
+        """
+        Apply fixes that need to be delayed until after initial rendering.
+
+        Like a digital janitor arriving after the guests have settled,
+        this method addresses styling issues that resist immediate application
+        due to the peculiarities of Qt's style inheritance and timing.
+        """
+        try:
+            # Force the terminal background color using a more aggressive approach
+            output = self.findChild(QTextEdit, "TerminalOutput")
+            if output:
+                bg_color = Theme.get_color('TERMINAL_BG')
+
+                # Triple approach: stylesheet, palette, and direct property
+                output.setStyleSheet(f"""
+                    QTextEdit#TerminalOutput {{
+                        background-color: {bg_color} !important;
+                    }}
+                """)
+
+                # Update palette directly
+                palette = output.palette()
+                palette.setColor(QPalette.ColorRole.Base, QColor(bg_color))
+                palette.setColor(QPalette.ColorRole.Window, QColor(bg_color))
+                output.setPalette(palette)
+
+                # Force update
+                output.style().unpolish(output)
+                output.style().polish(output)
+                output.update()
+
+                self.logger.debug("Applied delayed styling fixes to terminal output")
+        except Exception as e:
+            self.logger.error(f"Failed to apply delayed terminal styling: {str(e)}")
 
     def apply_input_styling(self) -> None:
         """Apply styling to the terminal input area."""

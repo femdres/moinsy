@@ -82,41 +82,106 @@ class Sidebar(QWidget):
             self.logger.error("Using fallback sidebar layout due to initialization error")
 
     def setup_logo_section(self, layout: QVBoxLayout) -> None:
-        """Setup the logo section at the top.
+        """Setup the logo section at the top with the actual Moinsy PNG icon.
 
         Args:
             layout: Parent layout to add the logo section to
+
+        Like a philosopher who realizes the futility of abstract representation
+        when physical reality is readily available, we abandon our generative art
+        in favor of a pre-rendered icon - an admission that sometimes the thing
+        itself is superior to our symbolic approximation of it.
         """
         try:
             # Create a frame for the logo section
             logo_container = QFrame()
             logo_container.setObjectName("LogoContainer")
-            logo_container.setFixedHeight(80)
+            logo_container.setFixedHeight(60)  # Reduced height without subtitle
 
             # Logo layout
-            logo_layout = QVBoxLayout(logo_container)
+            logo_layout = QHBoxLayout(logo_container)
             logo_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
             logo_layout.setContentsMargins(10, 10, 10, 10)
-            logo_layout.setSpacing(5)
+            logo_layout.setSpacing(10)
+
+            # Load the actual icon file from resources
+            icon_path = os.path.join(self.program_dir, "resources", "icons", "moinsy.png")
+            alt_path = os.path.join(self.program_dir, "src", "resources", "icons", "moinsy.png")
+
+            # Create logo image label
+            logo_label = QLabel()
+            logo_label.setObjectName("MoinsyLogoImage")
+
+            # Try to load the icon file with robust error handling
+            pixmap = None
+            if os.path.exists(icon_path):
+                pixmap = QPixmap(icon_path)
+                self.logger.debug(f"Loaded Moinsy icon from: {icon_path}")
+            elif os.path.exists(alt_path):
+                pixmap = QPixmap(alt_path)
+                self.logger.debug(f"Loaded Moinsy icon from alternate path: {alt_path}")
+            else:
+                self.logger.warning(f"Moinsy icon not found at {icon_path} or {alt_path}")
+
+            if pixmap is not None:
+                # Scale the image while preserving aspect ratio
+                scaled_pixmap = pixmap.scaled(
+                    40, 40,
+                    Qt.AspectRatioMode.KeepAspectRatio,
+                    Qt.TransformationMode.SmoothTransformation
+                )
+                logo_label.setPixmap(scaled_pixmap)
+                logo_label.setFixedSize(40, 40)
+            else:
+                # If icon not found, use a colored circle as fallback
+                self.logger.warning("Using fallback colored circle for logo")
+                logo_label.setText("M")
+                logo_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+                logo_label.setStyleSheet(f"""
+                    background-color: {Theme.get_color('PRIMARY')}; 
+                    color: white;
+                    border-radius: 20px;
+                    font-weight: bold;
+                    font-size: 20px;
+                """)
+                logo_label.setFixedSize(40, 40)
 
             # Logo text - Application name
             self.logo_label = QLabel("MOINSY")
             self.logo_label.setObjectName("LogoLabel")
             self.logo_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            self.logo_label.setStyleSheet(f"""
+                color: {Theme.get_color('PRIMARY')};
+                font-size: 18px;
+                font-weight: bold;
+                letter-spacing: 2px;
+            """)
+
+            # Add components to layout
+            logo_layout.addWidget(logo_label)
             logo_layout.addWidget(self.logo_label)
 
-            # Subtitle - Application description
-            self.subtitle = QLabel("System Installer")
-            self.subtitle.setObjectName("LogoSubtitle")
-            self.subtitle.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            logo_layout.addWidget(self.subtitle)
+            # Note: No subtitle "SYSTEM INSTALLER" as requested
+
+            # Style the container
+            logo_container.setStyleSheet(f"""
+                QFrame#LogoContainer {{
+                    background-color: {Theme.get_color('BG_MEDIUM')};
+                    border: 1px solid {Theme.get_color('BG_LIGHT')};
+                    border-radius: 8px;
+                    margin: 5px 0px;
+                }}
+            """)
 
             layout.addWidget(logo_container)
-            self.logger.debug("Logo section created - digital identity established")
+            self.logger.debug("Logo section created with physical icon - identity anchored in digital reality")
         except Exception as e:
-            self.logger.error(f"Failed to create logo section: {str(e)}")
-            # Add a simple label as fallback
-            layout.addWidget(QLabel("MOINSY"))
+            self.logger.error(f"Failed to create logo section: {str(e)}", exc_info=True)
+            # Add a simple label as fallback - a testament to the fragility of our visual ambitions
+            fallback_label = QLabel("MOINSY")
+            fallback_label.setStyleSheet("color: white; font-weight: bold;")
+            layout.addWidget(fallback_label)
+            self.logger.debug("Created fallback logo after failure - simplicity emerges from complexity's collapse")
 
     def setup_main_buttons(self, layout: QVBoxLayout) -> None:
         """Create and add main navigation buttons.

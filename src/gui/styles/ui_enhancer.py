@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Moinsy UI Enhancement Module
 ----------------------------
@@ -21,7 +20,7 @@ from PyQt6.QtWidgets import (
 )
 from PyQt6.QtCore import Qt, QSize, QTimer
 from PyQt6.QtGui import (
-    QFont, QPainter, QPen, QColor, QIcon, QPixmap,
+    QFont, QPainter, QPen, QColor, QIcon, QPixmap, QPalette,
     QPainterPath, QLinearGradient, QBrush, QRadialGradient
 )
 
@@ -45,13 +44,71 @@ class UIEnhancer:
         Args:
             main_window: Optional reference to the main application window
             logger: Optional logger instance for tracking enhancement operations
+
+        Like a digital entity contemplating its own materialization into a hostile
+        runtime environment, this constructor establishes the foundational attributes
+        needed for our aesthetic endeavors, carefully handling the metaphysical
+        challenge of non-existence with appropriate property initialization.
         """
+        super().__init__()  # Initialize as QObject if we inherit from it
+
         self.main_window = main_window
         self.logger = logger or logging.getLogger(__name__)
+
         # Always use dark theme - our only reality
         self.theme_id = "dark"
         self.enhanced_widgets: Set[int] = set()  # Track widget IDs we've already enhanced
-        self.logger.debug("UI enhancer initialized - preparing the digital makeover that nobody asked for")
+
+        # Initialize program_dir - a critical existential attribute whose absence
+        # would trigger philosophical errors about our place in the filesystem
+        self.program_dir = self._determine_program_directory()
+
+        self.logger.debug(f"UI enhancer initialized with program_dir: {self.program_dir}")
+
+    def _determine_program_directory(self) -> Optional[str]:
+        """
+        Determine the program directory through careful introspection of our digital environment.
+
+        Returns:
+            The program directory path, or None if it couldn't be determined
+
+        Like a digital archaeologist excavating the ruins of its own execution context,
+        this method attempts to locate our position in the vast expanse of the filesystem,
+        using whatever contextual clues we can find - a process not unlike the human
+        search for meaning in an indifferent universe.
+        """
+        try:
+            # First, try to extract from main window if available
+            if self.main_window and hasattr(self.main_window, 'program_dir'):
+                program_dir = self.main_window.program_dir
+                self.logger.debug(f"Program directory determined from main window: {program_dir}")
+                return program_dir
+
+            # Second, try to determine from the file location itself
+            # We're typically in src/gui/styles/ui_enhancer.py, so go up three levels
+            module_path = os.path.dirname(os.path.abspath(__file__))  # Get the directory of this file
+            program_dir = os.path.dirname(os.path.dirname(os.path.dirname(module_path)))
+
+            # Verify this looks like a valid program directory
+            if os.path.exists(os.path.join(program_dir, "src")) and os.path.isdir(os.path.join(program_dir, "src")):
+                self.logger.debug(f"Program directory determined from module path: {program_dir}")
+                return program_dir
+
+            # Third, try using the current working directory and look for src
+            cwd = os.getcwd()
+            if os.path.exists(os.path.join(cwd, "src")) and os.path.isdir(os.path.join(cwd, "src")):
+                self.logger.debug(f"Program directory determined from current working directory: {cwd}")
+                return cwd
+
+            # If all else fails, assume we're in /opt/moinsy - the default installation location
+            default_dir = "/opt/moinsy"
+            self.logger.warning(f"Could not determine program directory reliably, using default: {default_dir}")
+            return default_dir
+
+        except Exception as e:
+            self.logger.error(f"Failed to determine program directory: {str(e)}", exc_info=True)
+            self.logger.warning("Using current working directory as fallback")
+            return os.getcwd()
 
     def enhance_ui(self) -> None:
         """
@@ -159,9 +216,9 @@ class UIEnhancer:
             self._enhance_sidebar_base(sidebar)
 
             # Enhance navigation buttons based on color setting
-            self._enhance_sidebar_navigation_buttons(sidebar)  # <-- ADD THIS CALL HERE
+            self._enhance_sidebar_navigation_buttons(sidebar)
 
-            # Enhance logo section safely
+            # Enhance logo section safely - now with simplified header (no subtitle)
             self._enhance_sidebar_logo(sidebar)
 
             # Enhance progress section safely
@@ -171,9 +228,6 @@ class UIEnhancer:
             self._enhance_sidebar_controls(sidebar)
 
             self.logger.debug("Sidebar enhancements complete - navigation has been aesthetically optimized")
-
-        except Exception as e:
-            self.logger.error(f"Sidebar enhancement failed: {str(e)}", exc_info=True)
 
         except Exception as e:
             self.logger.error(f"Sidebar enhancement failed: {str(e)}", exc_info=True)
@@ -268,7 +322,12 @@ class UIEnhancer:
 
     def _enhance_sidebar_logo(self, sidebar: QWidget) -> None:
         """
-        Enhance the logo section with a custom Moinsy logo.
+        Enhance the logo section with the actual Moinsy PNG icon.
+
+        Like a digital portrait artist abandoning abstract representations
+        for photographic realism, we now use the actual icon file rather than
+        a mathematically generated approximation - an admission that sometimes
+        pre-designed imagery exceeds the expressive capacity of runtime generation.
 
         Safely replaces contents without deleting layouts directly.
         """
@@ -291,13 +350,28 @@ class UIEnhancer:
             header_layout.setSpacing(10)
             header_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
-            # Create logo
-            logo_pixmap = self._create_moinsy_logo(40)
+            # Load the actual icon file - a surrender to pre-designed imagery
+            icon_path = os.path.join(self.program_dir or "", "src", "resources", "icons", "moinsy.png")
 
             # Create logo label
             logo_label = QLabel()
             logo_label.setObjectName("MoinsyLogoImage")
-            logo_label.setPixmap(logo_pixmap)
+
+            # Try to load the icon file
+            if os.path.exists(icon_path):
+                logo_pixmap = QPixmap(icon_path).scaled(
+                    40, 40,
+                    Qt.AspectRatioMode.KeepAspectRatio,
+                    Qt.TransformationMode.SmoothTransformation
+                )
+                logo_label.setPixmap(logo_pixmap)
+                self.logger.debug(f"Loaded Moinsy icon from: {icon_path}")
+            else:
+                # Fall back to generated logo if file not found
+                self.logger.warning(f"Icon not found at {icon_path}, falling back to generated logo")
+                logo_pixmap = self._create_moinsy_logo(40)
+                logo_label.setPixmap(logo_pixmap)
+
             logo_label.setFixedSize(40, 40)
 
             # Create app name label
@@ -314,21 +388,11 @@ class UIEnhancer:
             header_layout.addWidget(logo_label)
             header_layout.addWidget(app_name)
 
-            # Create subtitle
-            subtitle = QLabel("System Installer")
-            subtitle.setObjectName("MoinsySubtitleLabel")
-            subtitle.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            subtitle.setStyleSheet(f"""
-                color: {Theme.get_color('TEXT_SECONDARY')};
-                font-size: 12px;
-                margin-top: 0px;
-            """)
-
-            # Add layouts to container
+            # Add main header layout to container
+            # Note: No subtitle is added as per requirements
             layout.addLayout(header_layout)
-            layout.addWidget(subtitle)
 
-            # Apply styling to container
+            # Apply styling to container - adjusted for the removed subtitle
             logo_container.setStyleSheet(f"""
                 QFrame#LogoContainer {{
                     background-color: {Theme.get_color('BG_MEDIUM')};
@@ -338,10 +402,27 @@ class UIEnhancer:
                 }}
             """)
 
-            self.logger.debug("Logo section enhanced - digital identity constructed from binary illusions")
+            # Adjust height for the logo container since we removed subtitle
+            logo_container.setFixedHeight(60)
+
+            self.logger.debug("Logo section enhanced with physical icon - digital identity based on tangible artifact")
 
         except Exception as e:
             self.logger.error(f"Failed to enhance sidebar logo: {str(e)}", exc_info=True)
+
+        # If we're missing the program_dir attribute, add it - a scaffolding to hold our existential journey
+        if not hasattr(self, 'program_dir'):
+            try:
+                # Try to determine program directory from main window if available
+                if self.main_window and hasattr(self.main_window, 'program_dir'):
+                    self.program_dir = self.main_window.program_dir
+                else:
+                    # Otherwise try to determine it from current file location
+                    self.program_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+                self.logger.debug(f"Determined program_dir: {self.program_dir}")
+            except Exception as e:
+                self.logger.error(f"Failed to determine program directory: {str(e)}")
+                self.program_dir = None
 
     def _enhance_sidebar_progress(self, sidebar: QWidget) -> None:
         """
@@ -538,18 +619,25 @@ class UIEnhancer:
 
     def _safely_enhance_terminal(self, terminal: QWidget) -> None:
         """
-        Enhance the terminal area with improved styling and border.
+        Enhance the terminal area with improved styling and border,
+        now using the correct color scheme: black background for terminal area,
+        gray for the terminal output and buttons.
 
         Args:
             terminal: The terminal widget to enhance
+
+        Like an interior designer who has finally understood the client's vision
+        after several miscommunications, we now properly differentiate between
+        the container and its contents, applying the correct darkness levels
+        to each nested interface element.
         """
         try:
-            self.logger.info("Enhancing terminal - text view makeover commencing")
+            self.logger.info("Enhancing terminal - text view makeover commencing with correct color scheme")
 
-            # Apply terminal area styling with border
+            # Apply terminal area styling with border and BLACK background
             terminal.setStyleSheet(f"""
                 QWidget#TerminalArea {{
-                    background-color: {Theme.get_color('BG_MEDIUM')};
+                    background-color: {Theme.get_color('TERMINAL_AREA_BG')};  /* Black background */
                     border: 1px solid {Theme.get_color('BG_LIGHT')};
                     border-radius: 8px;
                     margin: 5px;
@@ -559,19 +647,23 @@ class UIEnhancer:
             # Enhance terminal header
             self._enhance_terminal_header(terminal)
 
-            # Enhance terminal output area
+            # Enhance terminal output area with gray color
             self._enhance_terminal_output(terminal)
 
             # Enhance input area
             self._enhance_terminal_input(terminal)
 
-            self.logger.debug("Terminal enhancements complete - console has been aesthetically upgraded")
+            self.logger.debug(
+                "Terminal enhancements complete - console has been aesthetically upgraded with correct coloring")
 
         except Exception as e:
             self.logger.error(f"Terminal enhancement failed: {str(e)}", exc_info=True)
 
     def _enhance_terminal_header(self, terminal: QWidget) -> None:
-        """Enhance the terminal header with improved styling."""
+        """
+        Enhance the terminal header with improved styling.
+        Using BLACK background for the header area.
+        """
         try:
             # Find header
             header = terminal.findChild(QFrame, "TerminalHeader")
@@ -579,10 +671,10 @@ class UIEnhancer:
                 self.logger.warning("Terminal header not found - our digital temple remains unadorned")
                 return
 
-            # Apply styling
+            # Apply styling - BLACK background
             header.setStyleSheet(f"""
                 QFrame#TerminalHeader {{
-                    background-color: {Theme.get_color('BG_MEDIUM')};
+                    background-color: {Theme.get_color('TERMINAL_AREA_BG')};  /* Black background */
                     border-bottom: 1px solid {Theme.get_color('BG_LIGHT')};
                     border-radius: 7px 7px 0 0;
                     padding: 5px;
@@ -601,12 +693,12 @@ class UIEnhancer:
                     }}
                 """)
 
-            # Style clear button
+            # Style clear button - now with GRAY background
             clear_button = terminal.findChild(QPushButton, "ClearButton")
             if clear_button:
                 clear_button.setStyleSheet(f"""
                     QPushButton#ClearButton {{
-                        background-color: {Theme.get_color('BG_LIGHT')};
+                        background-color: {Theme.get_color('TERMINAL_BG')};  /* Gray background */
                         color: {Theme.get_color('TEXT_PRIMARY')};
                         border: none;
                         border-radius: 6px;
@@ -614,17 +706,25 @@ class UIEnhancer:
                         font-size: 12px;
                     }}
                     QPushButton#ClearButton:hover {{
-                        background-color: {Theme.get_color('CONTROL_HOVER')};
+                        background-color: {self._adjust_color(Theme.get_color('TERMINAL_BG'), -15)};
                     }}
                 """)
 
-            self.logger.debug("Terminal header enhanced - digital gateway now more visually coherent")
+            self.logger.debug("Terminal header enhanced - digital gateway now correctly colored")
 
         except Exception as e:
             self.logger.error(f"Failed to enhance terminal header: {str(e)}", exc_info=True)
 
     def _enhance_terminal_output(self, terminal: QWidget) -> None:
-        """Enhance the terminal output area with improved styling."""
+        """
+        Enhance the terminal output area with improved styling.
+        Now correctly uses GRAY for terminal output area.
+
+        Like a digital painter who has finally grasped the color theory
+        of our virtual universe, we now apply the correct shade of gray
+        to the terminal output area, creating the visual hierarchy that
+        the design mockup demands.
+        """
         try:
             # Find output area
             output = terminal.findChild(QTextEdit, "TerminalOutput")
@@ -632,8 +732,8 @@ class UIEnhancer:
                 self.logger.warning("Terminal output not found - the void remains unstyled")
                 return
 
-            # Apply styling directly to output area
-            bg_color = Theme.get_color('BG_DARK')
+            # Apply styling directly to output area using the GRAY terminal background
+            bg_color = Theme.get_color('TERMINAL_BG')  # Gray for terminal output
             text_color = Theme.get_color('TEXT_PRIMARY')
 
             output.setStyleSheet(f"""
@@ -648,19 +748,23 @@ class UIEnhancer:
                 }}
             """)
 
-            # Force update through palette as well
+            # Force update through palette as well - belt and suspenders approach
             palette = output.palette()
             palette.setColor(output.backgroundRole(), QColor(bg_color))
+            palette.setColor(QPalette.ColorRole.Base, QColor(bg_color))
             palette.setColor(output.foregroundRole(), QColor(text_color))
             output.setPalette(palette)
 
-            self.logger.debug("Terminal output enhanced - digital void now more aesthetically pleasing")
+            self.logger.debug("Terminal output enhanced - now properly gray as specified in mockup")
 
         except Exception as e:
             self.logger.error(f"Failed to enhance terminal output: {str(e)}", exc_info=True)
 
     def _enhance_terminal_input(self, terminal: QWidget) -> None:
-        """Enhance the terminal input area with improved styling."""
+        """
+        Enhance the terminal input area with improved styling.
+        Using GRAY for the input container to match terminal output.
+        """
         try:
             # Find input container
             input_container = terminal.findChild(QFrame, "InputContainer")
@@ -668,10 +772,10 @@ class UIEnhancer:
                 self.logger.warning("Input container not found - command entry remains unaestheticized")
                 return
 
-            # Apply styling to container
+            # Apply styling to container - GRAY to match terminal output
             input_container.setStyleSheet(f"""
                 QFrame#InputContainer {{
-                    background-color: {Theme.get_color('BG_DARK')};
+                    background-color: {Theme.get_color('TERMINAL_BG')};  /* Gray background */
                     border-radius: 6px;
                     margin: 0px;
                     margin-top: 5px;
@@ -708,7 +812,7 @@ class UIEnhancer:
                     }}
                 """)
 
-            self.logger.debug("Terminal input enhanced - command entry now aesthetically consistent")
+            self.logger.debug("Terminal input enhanced - now properly gray to match output")
 
         except Exception as e:
             self.logger.error(f"Failed to enhance terminal input: {str(e)}", exc_info=True)
@@ -735,8 +839,8 @@ class UIEnhancer:
                 terminal = components['terminal']
                 output = terminal.findChild(QTextEdit, "TerminalOutput")
                 if output:
-                    # Force the background color using a stylesheet with !important
-                    bg_color = Theme.get_color('BG_DARK')
+                    # Force the background color using a stylesheet with !important - GRAY for terminal output
+                    bg_color = Theme.get_color('TERMINAL_BG')  # Gray for terminal
                     text_color = Theme.get_color('TEXT_PRIMARY')
 
                     # Keep trying different approaches until one works
@@ -750,9 +854,11 @@ class UIEnhancer:
                         }}
                     """)
 
-                    # Update the palette as well for stubborn widgets
+                    # Triple approach: stylesheet, palette, and direct property
                     palette = output.palette()
                     palette.setColor(output.backgroundRole(), QColor(bg_color))
+                    palette.setColor(QPalette.ColorRole.Base, QColor(bg_color))  # Critical for QTextEdit
+                    palette.setColor(QPalette.ColorRole.Window, QColor(bg_color))
                     palette.setColor(output.foregroundRole(), QColor(text_color))
                     output.setPalette(palette)
 
@@ -761,7 +867,38 @@ class UIEnhancer:
                     output.style().polish(output)
                     output.update()
 
-            self.logger.debug("Delayed fixes applied - digital spackle covering the styling gaps")
+                # Also ensure the terminal area itself has BLACK background
+                terminal_area = terminal
+                if terminal_area:
+                    terminal_area.setStyleSheet(f"""
+                        QWidget#TerminalArea {{
+                            background-color: {Theme.get_color('TERMINAL_AREA_BG')} !important;
+                            border: 1px solid {Theme.get_color('BG_LIGHT')};
+                            border-radius: 8px;
+                            margin: 5px;
+                        }}
+                    """)
+                    terminal_area.update()
+
+                # Force the clear button to have GRAY background
+                clear_button = terminal.findChild(QPushButton, "ClearButton")
+                if clear_button:
+                    clear_button.setStyleSheet(f"""
+                        QPushButton#ClearButton {{
+                            background-color: {Theme.get_color('TERMINAL_BG')} !important;
+                            color: {Theme.get_color('TEXT_PRIMARY')};
+                            border: none;
+                            border-radius: 6px;
+                            padding: 5px 10px;
+                            font-size: 12px;
+                        }}
+                        QPushButton#ClearButton:hover {{
+                            background-color: {self._adjust_color(Theme.get_color('TERMINAL_BG'), -15)};
+                        }}
+                    """)
+                    clear_button.update()
+
+            self.logger.debug("Delayed fixes applied - colors properly corrected")
 
         except Exception as e:
             self.logger.error(f"Failed to apply delayed fixes: {str(e)}", exc_info=True)
@@ -975,75 +1112,3 @@ class UIEnhancer:
                 item.widget().deleteLater()
             elif item.layout():
                 self._delete_layout_contents(item.layout())
-
-
-def enhance_main_window(main_window: QMainWindow) -> None:
-    """
-    Apply UI enhancements to the main window and its components.
-
-    Args:
-        main_window: The main application window to enhance
-
-    Like a cosmetic procedure for a digital face, this function
-    coordinates the enhancement of multiple UI components to create
-    a cohesive visual experience that is simultaneously aesthetic
-    and functional, or at least pretends to be.
-    """
-    logger = logging.getLogger(__name__)
-    try:
-        # Create enhancer
-        enhancer = UIEnhancer(main_window, logger)
-
-        # Apply enhancements
-        enhancer.enhance_ui()
-
-        logger.info("Main window enhancement complete - digital makeover successful")
-    except Exception as e:
-        logger.error(f"Failed to enhance main window: {str(e)}", exc_info=True)
-        # Continue execution - failure to beautify is not a reason to crash
-
-
-def apply_theme_enhancements() -> None:
-    """
-    Apply enhancements to theme definitions without requiring a main window.
-
-    Like improving the color palette before painting begins, this function
-    fixes theme color definitions to address inconsistencies across different
-    themes, ensuring a better starting point for UI rendering.
-    """
-    logger = logging.getLogger(__name__)
-    try:
-        # Create enhancer without main window
-        enhancer = UIEnhancer(logger=logger)
-
-        # Apply theme definition enhancements
-        enhancer._enhance_theme_definitions()
-
-        logger.info("Theme enhancements applied - color palettes optimized")
-    except Exception as e:
-        logger.error(f"Failed to apply theme enhancements: {str(e)}", exc_info=True)
-
-
-# Integration function for main.py
-def setup_ui_enhancements(main_window: QMainWindow) -> None:
-    """
-    Set up UI enhancements and safely apply them.
-
-    Args:
-        main_window: Main window to enhance
-
-    Like a digital beautician carefully applying cosmetic improvements,
-    this function coordinates theme enhancements and UI beautification
-    in a way that doesn't disrupt the application's core functionality.
-    """
-    logger = logging.getLogger(__name__)
-    try:
-        # Apply theme enhancements first
-        apply_theme_enhancements()
-
-        # Apply UI enhancements with a delay to ensure window is ready
-        QTimer.singleShot(100, lambda: enhance_main_window(main_window))
-
-        logger.info("UI enhancements setup complete")
-    except Exception as e:
-        logger.error(f"Failed to setup UI enhancements: {str(e)}", exc_info=True)

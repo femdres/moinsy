@@ -50,7 +50,11 @@ class Theme:
 
         # Control colors
         'CONTROL_BG': '#4b5563',
-        'CONTROL_HOVER': '#374151'
+        'CONTROL_HOVER': '#374151',
+
+        # Terminal colors - the digital stage where our existential output performs
+        'TERMINAL_BG': '#323234',  # Gray for the terminal output and controls
+        'TERMINAL_AREA_BG': '#323234',  # Black for the terminal area background
     }
 
     # Font Configuration
