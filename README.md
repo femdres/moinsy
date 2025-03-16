@@ -1,4 +1,4 @@
-# Moinsy - Modular Installation System for Linux
+# Moinsy - Modular Installation System
 
 ![Moinsy Logo](src/resources/icons/moinsy.png)
 
