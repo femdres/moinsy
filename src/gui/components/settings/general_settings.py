@@ -102,43 +102,6 @@ class GeneralSettingsTab(QWidget):
             appearance_layout.setContentsMargins(20, 30, 20, 20)
             appearance_layout.setSpacing(15)
 
-            # Theme selection - as if changing colors could truly change the essence of the application
-            self.theme_combo = QComboBox()
-            self.theme_combo.addItem("Dark Theme", "dark")
-            self.theme_combo.addItem("Light Theme", "light")
-            self.theme_combo.addItem("High Contrast", "high_contrast")
-
-            self.theme_combo.setStyleSheet("""
-                QComboBox {
-                    background-color: #3d3e42;
-                    color: white;
-                    border: none;
-                    border-radius: 4px;
-                    padding: 5px;
-                    min-width: 100px;
-                }
-                QComboBox::drop-down {
-                    border: none;
-                    width: 20px;
-                }
-                QComboBox QAbstractItemView {
-                    background-color: #3d3e42;
-                    color: white;
-                    selection-background-color: #4CAF50;
-                }
-            """)
-
-            # Connect theme change signal - propagating our aesthetic decisions upward
-            self.theme_combo.currentIndexChanged.connect(self._on_theme_changed)
-
-            appearance_layout.addRow("Theme:", self.theme_combo)
-
-            # Theme description label - an attempt to justify aesthetic preferences with function
-            self.theme_description = QLabel("The visual style applied to the application interface.")
-            self.theme_description.setStyleSheet("color: #888888; font-size: 12px;")
-            self.theme_description.setWordWrap(True)
-            appearance_layout.addRow("", self.theme_description)
-
             # Add colored buttons checkbox to appearance_layout (not settings_layout)
             self.colored_buttons_checkbox = QCheckBox("Use colored buttons in sidebar")
             self.colored_buttons_checkbox.setStyleSheet("""
@@ -398,8 +361,8 @@ class GeneralSettingsTab(QWidget):
 
             # Window size - the boundaries of our virtual existence
             window_size = self.config_manager.get_setting("general", "window_size", {"width": 1200, "height": 950})
-            self.window_width_spin.setValue(window_size.get("width", 1200))
-            self.window_height_spin.setValue(window_size.get("height", 950))
+            self.window_width_spin.setValue(window_size.get("width", 1000))
+            self.window_height_spin.setValue(window_size.get("height", 800))
 
             # Sidebar width - the space we allocate for navigation
             sidebar_width = self.config_manager.get_setting("general", "sidebar_width", 275)
@@ -560,27 +523,6 @@ class GeneralSettingsTab(QWidget):
             self.logger.error(f"Failed to update theme description: {str(e)}")
             # Set a default description - falling back to factual brevity
             self.theme_description.setText("The visual style applied to the application interface.")
-
-    def _on_theme_changed(self, index: int) -> None:
-        """Handle theme selection change, an aesthetic metamorphosis.
-
-        Args:
-            index: Selected index in the combo box, a pointer to possibility
-        """
-        if index < 0:
-            return  # Negative indices - the void between selections
-
-        try:
-            theme_id = self.theme_combo.itemData(index)
-            if theme_id:
-                # Update theme description based on selection
-                self._update_theme_description(cast(str, theme_id))
-
-                # Emit signal for parent to handle - a cry into the event-driven void
-                self.theme_changed.emit(cast(str, theme_id))
-                self.logger.debug(f"Theme changed to: {theme_id} - a digital aesthetic metamorphosis")
-        except Exception as e:
-            self.logger.error(f"Error handling theme change: {str(e)}", exc_info=True)
 
     def _handle_autostart_implementation(self, enable: bool) -> None:
         """Actually implement autostart functionality beyond mere preferences.

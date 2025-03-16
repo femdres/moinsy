@@ -2,17 +2,16 @@
 
 from PyQt6.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QMessageBox
 from PyQt6.QtGui import QIcon, QCloseEvent
-from PyQt6.QtCore import Qt
+from PyQt6.QtCore import Qt, QTimer
 import os
 import logging
-from typing import Optional, Dict, Any, Tuple, Union, Callable
+from typing import Optional, Dict, Any, Tuple, Union, Callable, List, Set, cast
 
 from gui.components.sidebar import Sidebar
 from gui.components.terminal import TerminalArea
 from gui.components.help_window import HelpWindow
 from gui.components.installation_window import InstallationWindow
 from gui.components.command_builder import CommandBuilder
-from gui.styles.ui_enhancer_integration import setup_ui_enhancements
 from gui.styles.theme import Theme
 from managers.installation_manager import InstallationManager
 from managers.tools_manager import ToolsManager
@@ -32,6 +31,9 @@ class MainWindow(QMainWindow):
         try:
             super().__init__()
             self.program_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+            # Initialize tracking variables
+            self._is_initial_setup = True  # Flag to track initial setup state
 
             # Configure logging
             self.setup_logging()
@@ -57,8 +59,8 @@ class MainWindow(QMainWindow):
             # Apply settings
             self.apply_settings()
 
-            # Apply UI enhancements
-            self.ui_manager = setup_ui_enhancements(self)
+            # Schedule delayed UI enhancements for after widgets are fully initialized
+            QTimer.singleShot(100, self._apply_delayed_fixes)
 
             self.logger.info("Main window initialization complete")
 
@@ -123,7 +125,7 @@ class MainWindow(QMainWindow):
                 self.logger.warning(f"Icon not found at {icon_path}")
 
             # Default size will be overridden by settings later
-            self.setMinimumSize(1200, 950)
+            self.setMinimumSize(1000, 800)
             self.setWindowState(Qt.WindowState.WindowActive)
             self.logger.debug("Window properties configured")
         except Exception as e:
@@ -151,9 +153,9 @@ class MainWindow(QMainWindow):
 
             # Content area
             content_widget = QWidget()
-            content_widget.setStyleSheet("background-color: #1a1b1e;")
+            content_widget.setStyleSheet(f"background-color: {Theme.get_color('BG_DARK')};")  # Match main window background
             content_layout = QVBoxLayout(content_widget)
-            content_layout.setContentsMargins(20, 20, 20, 20)
+            content_layout.setContentsMargins(0, 0, 0, 0)  # Let the terminal component handle its own margins
 
             # Create terminal
             self.terminal = TerminalArea()
@@ -162,6 +164,14 @@ class MainWindow(QMainWindow):
 
             # Add content widget to main layout with stretch
             main_layout.addWidget(content_widget, stretch=1)  # This makes content area expand/contract with window
+
+            # Apply theme-specific styling to main window
+            self.setStyleSheet(f"""
+                QMainWindow {{
+                    background-color: {Theme.get_color('BG_DARK')};
+                    color: {Theme.get_color('TEXT_PRIMARY')};
+                }}
+            """)
 
             self.logger.debug("Main layout structure created")
         except Exception as e:
@@ -233,9 +243,9 @@ class MainWindow(QMainWindow):
         """Apply settings from configuration manager to UI components."""
         try:
             # Window size
-            window_size = self.config_manager.get_setting("general", "window_size", {"width": 1200, "height": 950})
-            width = window_size.get("width", 1200)
-            height = window_size.get("height", 950)
+            window_size = self.config_manager.get_setting("general", "window_size", {"width": 1000, "height": 800})
+            width = window_size.get("width", 1000)
+            height = window_size.get("height", 800)
             self.resize(width, height)
             self.logger.debug(f"Applied window size: {width}x{height}")
 
@@ -260,6 +270,10 @@ class MainWindow(QMainWindow):
             colored_buttons = self.config_manager.get_setting("general", "colored_buttons", True)
             Theme.set_use_colored_buttons(colored_buttons)
             self.logger.debug(f"Applied colored buttons setting: {colored_buttons}")
+
+            # If this is a setting change rather than initial setup, refresh navigation buttons
+            if hasattr(self, 'sidebar') and not self._is_initial_setup:
+                self._refresh_navigation_buttons()
 
             # Log level
             log_level = self.config_manager.get_setting("system", "log_level", "INFO")
@@ -290,6 +304,9 @@ class MainWindow(QMainWindow):
                 except Exception as e:
                     self.logger.error(f"Failed to configure log file {log_file}: {str(e)}")
 
+            # Mark that we've completed initial setup
+            self._is_initial_setup = False
+
         except Exception as e:
             self.logger.exception(f"Error applying settings: {str(e)}")
             self.handle_error(f"Error applying settings: {str(e)}")
@@ -305,71 +322,28 @@ class MainWindow(QMainWindow):
         malleable existence nonetheless.
         """
         try:
-            # Import Theme locally to avoid the existential paradox of circular imports
-            # A reminder that even classes must be summoned from the void before they can exist
-            from gui.styles.theme import Theme
+            # Define buttons with their respective colors
+            buttons_config = [
+                (self.sidebar.installations_button, "green"),
+                (self.sidebar.commands_button, "red"),
+                (self.sidebar.tools_button, "yellow"),
+                (self.sidebar.settings_button, "blue"),
+                (self.sidebar.help_button, "purple"),
+                (self.sidebar.reboot_button, "danger"),
+                (self.sidebar.exit_button, "neutral")
+            ]
 
-            # Access sidebar and apply appropriate styling to each button
-            if hasattr(self, 'sidebar'):
-                # Define buttons with their respective colors
-                buttons_config = [
-                    (self.sidebar.installations_button, Theme.get_color('PRIMARY'), "green"),
-                    (self.sidebar.commands_button, "#BA4D45", "red"),
-                    (self.sidebar.tools_button, Theme.get_color('WARNING'), "yellow"),
-                    (self.sidebar.settings_button, Theme.get_color('SECONDARY'), "blue"),
-                    (self.sidebar.help_button, Theme.get_color('TERTIARY'), "purple"),
-                    (self.sidebar.reboot_button, Theme.get_color('ERROR'), "danger"),
-                    (self.sidebar.exit_button, Theme.get_color('CONTROL_BG'), "neutral")
-                ]
+            # Apply styling based on current colored buttons setting
+            use_colored = Theme.get_use_colored_buttons()
 
-                # Apply styling based on current colored buttons setting
-                use_colored = Theme.get_class()._use_colored_buttons
+            for button, type_name in buttons_config:
+                if button is not None:
+                    if type_name in ["danger", "neutral"]:
+                        self.sidebar._style_control_button(button, type_name)
+                    else:
+                        self.sidebar._style_navigation_button(button, type_name)
 
-                for button, color, type_name in buttons_config:
-                    if button is not None:
-                        if use_colored:
-                            # Apply colored styling
-                            if type_name in ["danger", "neutral"]:
-                                self.sidebar._style_control_button(button, type_name)
-                            else:
-                                self.sidebar._style_navigation_button(button, type_name)
-                        else:
-                            # Apply uniform styling
-                            if type_name in ["danger", "neutral"]:
-                                # Control buttons
-                                button.setStyleSheet(f"""
-                                    QPushButton {{
-                                        background-color: {Theme.get_color('CONTROL_BG')};
-                                        color: {Theme.get_color('TEXT_PRIMARY')};
-                                        border: none;
-                                        border-radius: 8px;
-                                        padding: 10px;
-                                        font-weight: bold;
-                                    }}
-                                    QPushButton:hover {{
-                                        background-color: {Theme.get_color('CONTROL_HOVER')};
-                                    }}
-                                """)
-                            else:
-                                # Navigation buttons
-                                button.setStyleSheet(f"""
-                                    QPushButton {{
-                                        background-color: {Theme.get_color('CONTROL_BG')};
-                                        color: {Theme.get_color('TEXT_PRIMARY')};
-                                        border: none;
-                                        border-radius: 8px;
-                                        padding: 10px;
-                                        text-align: left;
-                                        padding-left: 20px;
-                                        font-size: 14px;
-                                        font-weight: bold;
-                                    }}
-                                    QPushButton:hover {{
-                                        background-color: {Theme.get_color('CONTROL_HOVER')};
-                                    }}
-                                """)
-
-                self.logger.debug(f"Refreshed navigation buttons with colored mode: {use_colored}")
+            self.logger.debug(f"Refreshed navigation buttons with colored mode: {use_colored}")
         except Exception as e:
             self.logger.error(f"Error refreshing navigation buttons: {str(e)}", exc_info=True)
             # Continue execution despite errors - aesthetics are non-critical
@@ -383,8 +357,6 @@ class MainWindow(QMainWindow):
         Like a digital chameleon adapting to its environment, this method
         transforms the application's appearance to match the chosen aesthetic.
         """
-        from gui.styles.theme import Theme  # Import here to avoid circular imports
-
         # Get colored buttons setting
         colored_buttons = self.config_manager.get_setting("general", "colored_buttons", True)
 
@@ -392,18 +364,25 @@ class MainWindow(QMainWindow):
         Theme.set_use_colored_buttons(colored_buttons)
         self.logger.debug(f"Colored buttons setting: {colored_buttons}")
 
-        # Set the theme in the Theme class
-        Theme.set_theme(theme_id)
-        self.logger.info(f"Applying theme: {theme_id}")
+        # Apply to components
+        if hasattr(self, 'sidebar'):
+            self.sidebar.apply_theme(theme_id)
 
-        # Apply to application
-        from PyQt6.QtWidgets import QApplication
-        app = QApplication.instance()
-        if app:
-            Theme.apply_base_styles(app)
+        if hasattr(self, 'terminal'):
+            self.terminal.apply_theme(theme_id)
 
-        # Explicitly reapply styling to navigation buttons to ensure colored buttons take effect
+        # Apply theme style to main window
+        self.setStyleSheet(f"""
+            QMainWindow {{
+                background-color: {Theme.get_color('BG_DARK')};
+                color: {Theme.get_color('TEXT_PRIMARY')};
+            }}
+        """)
+
+        # Explicitly refresh navigation buttons
         self._refresh_navigation_buttons()
+
+        self.logger.info(f"Applied theme: {theme_id} to all components")
 
     def show_installation_options(self) -> None:
         """Show installation options dialog.
@@ -596,3 +575,39 @@ class MainWindow(QMainWindow):
             self.logger.exception(f"Error saving settings on close: {str(e)}")
 
         event.accept()  # Allow the window to close
+
+    def _apply_delayed_fixes(self) -> None:
+        """Apply fixes that need to be delayed until after initial rendering.
+
+        Like digital glue that bonds components after they've settled into place,
+        this method addresses styling and layout issues that manifest only after
+        the initial UI hierarchy has been established.
+        """
+        try:
+            self.logger.debug("Applying delayed UI fixes")
+
+            # Force update styles on central widget
+            central_widget = self.centralWidget()
+            if central_widget:
+                # Ensure margins are properly set
+                layout = central_widget.layout()
+                if layout:
+                    layout.setContentsMargins(0, 0, 0, 0)  # Remove margins - let components handle their own spacing
+                    layout.setSpacing(0)
+
+                # Force style update
+                central_widget.style().unpolish(central_widget)
+                central_widget.style().polish(central_widget)
+                central_widget.update()
+
+            # Set initial setup flag (used in apply_settings)
+            self._is_initial_setup = True
+
+            # Apply theme to ensure consistent styling
+            theme_id = "dark"  # We only use dark theme
+            self.apply_theme(theme_id)
+
+            self.logger.debug("Delayed UI fixes applied")
+        except Exception as e:
+            self.logger.error(f"Failed to apply delayed UI fixes: {str(e)}", exc_info=True)
+            # Continue without fixes - the UI will still function, just with potential aesthetic inconsistencies

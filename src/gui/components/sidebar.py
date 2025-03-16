@@ -7,7 +7,7 @@ from PyQt6.QtWidgets import (
     QLabel, QProgressBar, QFrame, QMessageBox, QApplication,
     QSizePolicy
 )
-from PyQt6.QtCore import Qt, QSize, pyqtSignal
+from PyQt6.QtCore import Qt, QSize, pyqtSignal, QTimer
 from PyQt6.QtGui import QFont, QPainter, QPen, QColor, QIcon, QPixmap
 import psutil
 import os
@@ -45,8 +45,49 @@ class Sidebar(QWidget):
         self._current_theme = "dark"  # Default theme
         self._is_expanded = True  # Track expansion state
 
+        # Determine program directory for resource access
+        self.program_dir = self._determine_program_directory()
+
         # Setup UI components
         self.setup_ui()
+
+        # Schedule delayed styling fixes
+        QTimer.singleShot(100, self._apply_delayed_fixes)
+
+    def _determine_program_directory(self) -> str:
+        """Determine the program directory through careful introspection.
+
+        Returns:
+            The program directory path
+
+        Like a digital archaeologist excavating the ruins of its own execution context,
+        this method locates our position in the vast expanse of the filesystem.
+        """
+        try:
+            # First attempt: Get from parent if available
+            if hasattr(self.parent(), 'program_dir'):
+                return self.parent().program_dir
+
+            # Second attempt: Determine from file location
+            module_path = os.path.dirname(os.path.abspath(__file__))
+            # Go up from gui/components/sidebar.py to src
+            potential_dir = os.path.dirname(os.path.dirname(module_path))
+
+            # Verify this looks like a valid program directory
+            if os.path.exists(os.path.join(potential_dir, "resources")):
+                return potential_dir
+
+            # Third attempt: Try using current working directory
+            cwd = os.getcwd()
+            if os.path.exists(os.path.join(cwd, "src")):
+                return os.path.join(cwd, "src")
+
+            # Final fallback
+            return "/opt/moinsy/src"
+
+        except Exception as e:
+            self.logger.error(f"Failed to determine program directory: {str(e)}")
+            return "/opt/moinsy/src"  # Return default path on error
 
     def setup_ui(self) -> None:
         """Initialize and arrange all UI elements."""
@@ -247,29 +288,91 @@ class Sidebar(QWidget):
             progress_layout.setSpacing(10)
             progress_layout.setContentsMargins(15, 15, 15, 15)
 
+            # Create header with icon and label
+            header_layout = QHBoxLayout()
+            header_layout.setSpacing(8)
+
+            # Create icon
+            icon_label = QLabel()
+            icon_label.setObjectName("ProgressIcon")
+            icon_label.setFixedSize(16, 16)
+            icon_label.setStyleSheet(f"""
+                QLabel#ProgressIcon {{
+                    background-color: {Theme.get_color('PRIMARY')};
+                    border-radius: 8px;
+                }}
+            """)
+            header_layout.addWidget(icon_label)
+
             # Header for progress section
             header = QLabel("System Progress")
             header.setObjectName("ProgressHeader")
-            progress_layout.addWidget(header)
+            header.setStyleSheet(f"""
+                QLabel#ProgressHeader {{
+                    color: {Theme.get_color('TEXT_PRIMARY')};
+                    font-size: 14px;
+                    font-weight: bold;
+                }}
+            """)
+            header_layout.addWidget(header)
+            header_layout.addStretch()
+
+            progress_layout.addLayout(header_layout)
 
             # Progress percentage display
             self.progress_percentage = QLabel("0%")
             self.progress_percentage.setObjectName("ProgressPercentage")
             self.progress_percentage.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            self.progress_percentage.setStyleSheet(f"""
+                QLabel#ProgressPercentage {{
+                    color: {Theme.get_color('PRIMARY')};
+                    font-size: 24px;
+                    font-weight: bold;
+                }}
+            """)
             progress_layout.addWidget(self.progress_percentage)
 
             # Progress bar for visual indicator
             self.progress_bar = QProgressBar()
             self.progress_bar.setObjectName("ProgressBar")
             self.progress_bar.setTextVisible(False)
-            self.progress_bar.setMaximumHeight(6)
+            self.progress_bar.setMinimumHeight(8)
+            self.progress_bar.setMaximumHeight(8)
+            self.progress_bar.setStyleSheet(f"""
+                QProgressBar {{
+                    background-color: {Theme.get_color('BG_LIGHT')};
+                    border: none;
+                    border-radius: 4px;
+                }}
+                QProgressBar::chunk {{
+                    background-color: {Theme.get_color('PRIMARY')};
+                    border-radius: 4px;
+                }}
+            """)
             progress_layout.addWidget(self.progress_bar)
 
             # Status text below progress bar
             self.progress_status = QLabel("No active installation")
             self.progress_status.setObjectName("ProgressStatus")
             self.progress_status.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            self.progress_status.setStyleSheet(f"""
+                QLabel#ProgressStatus {{
+                    color: {Theme.get_color('TEXT_SECONDARY')};
+                    font-size: 12px;
+                    margin-top: 3px;
+                }}
+            """)
             progress_layout.addWidget(self.progress_status)
+
+            # Style the frame with proper border and background
+            progress_frame.setStyleSheet(f"""
+                QFrame#ProgressFrame {{
+                    background-color: {Theme.get_color('BG_MEDIUM')};
+                    border: 1px solid {Theme.get_color('BG_LIGHT')};
+                    border-radius: 8px;
+                    margin: 5px 0px;
+                }}
+            """)
 
             layout.addWidget(progress_frame)
             self.logger.debug("Progress section created - operational status display online")
@@ -306,7 +409,23 @@ class Sidebar(QWidget):
             self.exit_button.clicked.connect(QApplication.instance().quit)
             control_layout.addWidget(self.exit_button)
 
+            # Style the control frame and buttons
+            control_frame.setStyleSheet(f"""
+                QFrame#ControlFrame {{
+                    background-color: {Theme.get_color('BG_MEDIUM')};
+                    border: 1px solid {Theme.get_color('BG_LIGHT')};
+                    border-radius: 8px;
+                    margin: 5px 0px;
+                    padding: 5px;
+                }}
+            """)
+
+            # Apply control button styling
+            self._style_control_button(self.reboot_button, "danger")
+            self._style_control_button(self.exit_button, "neutral")
+
             layout.addWidget(control_frame)
+            layout.addStretch()
             self.logger.debug("Control buttons created - system operation controls available")
         except Exception as e:
             self.logger.error(f"Failed to create control buttons: {str(e)}")
@@ -365,12 +484,15 @@ class Sidebar(QWidget):
         try:
             # Get colors from Theme
             bg_color = Theme.get_color('BG_MEDIUM')
+            border_color = Theme.get_color('BG_LIGHT')
 
-            # Set base sidebar styling
+            # Set base sidebar styling with border
             self.setStyleSheet(f"""
                 QWidget#MainSidebar {{
                     background-color: {bg_color};
-                    border-right: 1px solid {Theme.get_color('BG_LIGHT')};
+                    border: 1px solid {border_color};
+                    border-radius: 8px;
+                    margin: 20px 5px 20px 20px;  /* Top, right, bottom, left - consistent spacing */
                 }}
             """)
             self.logger.debug("Applied base styling to sidebar")
@@ -396,16 +518,8 @@ class Sidebar(QWidget):
                     letter-spacing: 2px;
                 """)
 
-            # Style subtitle
+            # Style subtitle if it exists (though it's removed in the enhanced version)
             if hasattr(self, 'subtitle'):
-                # Use Theme font if available
-                try:
-                    self.subtitle.setFont(Theme.get_font('SUBTITLE'))
-                except (AttributeError, KeyError):
-                    # Fallback font
-                    self.subtitle.setFont(QFont('Segoe UI', 10))
-
-                # Style with Theme colors
                 self.subtitle.setStyleSheet(f"""
                     color: {Theme.get_color('TEXT_SECONDARY')};
                 """)
@@ -416,7 +530,8 @@ class Sidebar(QWidget):
                 logo_container.setStyleSheet(f"""
                     QFrame#LogoContainer {{
                         background-color: {Theme.get_color('BG_MEDIUM')};
-                        border-radius: 12px;
+                        border: 1px solid {Theme.get_color('BG_LIGHT')};
+                        border-radius: 8px;
                         margin-bottom: 5px;
                     }}
                 """)
@@ -428,7 +543,10 @@ class Sidebar(QWidget):
     def apply_button_styling(self) -> None:
         """Apply styling to all navigation and control buttons."""
         try:
-            # Style the navigation buttons with their specific colors
+            # Check if using colored buttons (from Theme settings)
+            use_colored = Theme.get_use_colored_buttons()
+
+            # Style the navigation buttons
             self._style_navigation_button(self.installations_button, "green")
             self._style_navigation_button(self.commands_button, "red")
             self._style_navigation_button(self.tools_button, "yellow")
@@ -438,17 +556,6 @@ class Sidebar(QWidget):
             # Style control buttons
             self._style_control_button(self.reboot_button, "danger")
             self._style_control_button(self.exit_button, "neutral")
-
-            # Style control frame
-            control_frame = self.findChild(QFrame, "ControlFrame")
-            if control_frame:
-                control_frame.setStyleSheet(f"""
-                    QFrame#ControlFrame {{
-                        background-color: {Theme.get_color('BG_LIGHT')};
-                        border-radius: 12px;
-                        padding: 5px;
-                    }}
-                """)
 
             self.logger.debug("Applied button styling")
         except Exception as e:
@@ -462,10 +569,10 @@ class Sidebar(QWidget):
             color_theme: Color theme identifier (green, red, blue, etc.)
         """
         try:
-            # Get color from property or use predefined colors
-            stored_color = button.property("button_color")
+            # Check if we should use colored buttons or uniform styling
+            use_colored = Theme.get_use_colored_buttons()
 
-            # Allow override by specific color themes
+            # Get color based on color theme
             if color_theme == "green":
                 color = Theme.get_color('PRIMARY')
             elif color_theme == "red":
@@ -478,32 +585,52 @@ class Sidebar(QWidget):
                 color = Theme.get_color('TERTIARY')
             else:
                 # Use the stored color or fallback
+                stored_color = button.property("button_color")
                 color = stored_color if stored_color else Theme.get_color('PRIMARY')
 
             # Adjust hover color
             hover_color = self.adjust_color(color, -20)
             pressed_color = self.adjust_color(color, -40)
 
-            # Apply styling
-            button.setStyleSheet(f"""
-                QPushButton {{
-                    background-color: {color};
-                    color: white;
-                    border: none;
-                    border-radius: 8px;
-                    padding: 10px;
-                    text-align: left;
-                    padding-left: 20px;
-                    font-size: 14px;
-                    font-weight: bold;
-                }}
-                QPushButton:hover {{
-                    background-color: {hover_color};
-                }}
-                QPushButton:pressed {{
-                    background-color: {pressed_color};
-                }}
-            """)
+            if use_colored:
+                # Apply colored styling
+                button.setStyleSheet(f"""
+                    QPushButton {{
+                        background-color: {color};
+                        color: white;
+                        border: none;
+                        border-radius: 8px;
+                        padding: 10px;
+                        text-align: left;
+                        padding-left: 20px;
+                        font-size: 14px;
+                        font-weight: bold;
+                    }}
+                    QPushButton:hover {{
+                        background-color: {hover_color};
+                    }}
+                    QPushButton:pressed {{
+                        background-color: {pressed_color};
+                    }}
+                """)
+            else:
+                # Apply uniform styling
+                button.setStyleSheet(f"""
+                    QPushButton {{
+                        background-color: {Theme.get_color('CONTROL_BG')};
+                        color: {Theme.get_color('TEXT_PRIMARY')};
+                        border: none;
+                        border-radius: 8px;
+                        padding: 10px;
+                        text-align: left;
+                        padding-left: 20px;
+                        font-size: 14px;
+                        font-weight: bold;
+                    }}
+                    QPushButton:hover {{
+                        background-color: {Theme.get_color('CONTROL_HOVER')};
+                    }}
+                """)
         except Exception as e:
             self.logger.error(f"Error styling navigation button: {str(e)}")
 
@@ -555,8 +682,9 @@ class Sidebar(QWidget):
             if progress_frame:
                 progress_frame.setStyleSheet(f"""
                     QFrame#ProgressFrame {{
-                        background-color: {Theme.get_color('BG_LIGHT')};
-                        border-radius: 12px;
+                        background-color: {Theme.get_color('BG_MEDIUM')};
+                        border: 1px solid {Theme.get_color('BG_LIGHT')};
+                        border-radius: 8px;
                         padding: 5px;
                     }}
                 """)
@@ -565,17 +693,21 @@ class Sidebar(QWidget):
             progress_header = self.findChild(QLabel, "ProgressHeader")
             if progress_header:
                 progress_header.setStyleSheet(f"""
-                    color: {Theme.get_color('TEXT_SECONDARY')};
-                    font-size: 14px;
-                    font-weight: bold;
+                    QLabel#ProgressHeader {{
+                        color: {Theme.get_color('TEXT_PRIMARY')};
+                        font-size: 14px;
+                        font-weight: bold;
+                    }}
                 """)
 
             # Style progress percentage
             if hasattr(self, 'progress_percentage'):
                 self.progress_percentage.setStyleSheet(f"""
-                    color: {Theme.get_color('PRIMARY')};
-                    font-size: 24px;
-                    font-weight: bold;
+                    QLabel#ProgressPercentage {{
+                        color: {Theme.get_color('PRIMARY')};
+                        font-size: 24px;
+                        font-weight: bold;
+                    }}
                 """)
 
             # Style progress bar
@@ -595,9 +727,11 @@ class Sidebar(QWidget):
             # Style progress status
             if hasattr(self, 'progress_status'):
                 self.progress_status.setStyleSheet(f"""
-                    color: {Theme.get_color('TEXT_SECONDARY')};
-                    margin-top: 5px;
-                    font-size: 12px;
+                    QLabel#ProgressStatus {{
+                        color: {Theme.get_color('TEXT_SECONDARY')};
+                        margin-top: 5px;
+                        font-size: 12px;
+                    }}
                 """)
 
             self.logger.debug("Applied progress styling")
@@ -734,3 +868,47 @@ class Sidebar(QWidget):
         except Exception as e:
             self.logger.error(f"Color adjustment error: {str(e)}")
             return color  # Return original color on error
+
+    def _apply_delayed_fixes(self) -> None:
+        """Apply fixes that need to be delayed until after initial rendering.
+
+        Like a digital janitor arriving after the guests have settled,
+        this method addresses styling issues that resist immediate application
+        due to the peculiarities of Qt's style inheritance and timing.
+        """
+        try:
+            self.logger.debug("Applying delayed sidebar styling fixes")
+
+            # Force refresh on navigation buttons
+            buttons = [
+                (self.installations_button, "green"),
+                (self.commands_button, "red"),
+                (self.tools_button, "yellow"),
+                (self.settings_button, "blue"),
+                (self.help_button, "purple"),
+                (self.reboot_button, "danger"),
+                (self.exit_button, "neutral")
+            ]
+
+            for button, color_type in buttons:
+                if isinstance(button, QPushButton):
+                    if color_type in ["danger", "neutral"]:
+                        self._style_control_button(button, color_type)
+                    else:
+                        self._style_navigation_button(button, color_type)
+
+                    # Force update
+                    button.style().unpolish(button)
+                    button.style().polish(button)
+                    button.update()
+
+            # Ensure progress frame styling is applied
+            progress_frame = self.findChild(QFrame, "ProgressFrame")
+            if progress_frame:
+                progress_frame.style().unpolish(progress_frame)
+                progress_frame.style().polish(progress_frame)
+                progress_frame.update()
+
+            self.logger.debug("Delayed sidebar styling fixes applied")
+        except Exception as e:
+            self.logger.error(f"Failed to apply delayed sidebar fixes: {str(e)}", exc_info=True)
