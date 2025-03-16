@@ -100,29 +100,6 @@ Configure Moinsy's appearance and behavior through the Settings panel, including
 - Window sizing
 - System integration options
 
-## Project Structure
-
-```
-moinsy/
-├── configure.sh            # Installation script
-├── run-moinsy.sh           # Startup script
-└── src/                    # Source code directory
-    ├── config.py           # Application configuration
-    ├── gui/                # User interface components
-    │   ├── components/     # UI widgets and dialogs
-    │   ├── styles/         # Theme and styling
-    │   └── main_window.py  # Main application window
-    ├── managers/           # Business logic managers
-    ├── resources/          # Icons, configs, and assets
-    │   ├── configs/        # Configuration templates
-    │   ├── desktops/       # Desktop launchers
-    │   ├── icons/          # Application icons
-    │   ├── policies/       # PolicyKit configurations
-    │   └── texts/          # Static text resources
-    ├── utils/              # Utility functions
-    └── moinsy.py           # Main application entry point
-```
-
 ## Development
 
 ### Setting Up Development Environment
