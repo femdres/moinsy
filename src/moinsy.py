@@ -115,7 +115,7 @@ def show_splash_screen() -> Optional[QSplashScreen]:
     """
     try:
         # Get splash image path
-        splash_path = get_resource_path("icons", "splash.png")
+        splash_path = get_resource_path("icons", "splash.svg")
 
         # Check if splash image exists
         if not os.path.exists(splash_path):
@@ -181,7 +181,7 @@ def main() -> int:
         app.setOrganizationDomain("moinsy.org")
 
         # Set application icon
-        icon_path = get_resource_path("icons", "moinsy.png")
+        icon_path = get_resource_path("icons", "moinsy.svg")
         if os.path.exists(icon_path):
             app.setWindowIcon(QIcon(icon_path))
         else:

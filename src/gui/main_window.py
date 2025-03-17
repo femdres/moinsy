@@ -118,7 +118,7 @@ class MainWindow(QMainWindow):
             self.setWindowTitle("Modular Installation System")
 
             # Set application icon if it exists
-            icon_path = os.path.join(self.program_dir, "resources", "icons", "moinsy.png")
+            icon_path = os.path.join(self.program_dir, "resources", "icons", "moinsy.svg")
             if os.path.exists(icon_path):
                 self.setWindowIcon(QIcon(icon_path))
             else:

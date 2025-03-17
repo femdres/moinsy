@@ -137,7 +137,7 @@ class Sidebar(QWidget):
             # Create a frame for the logo section
             logo_container = QFrame()
             logo_container.setObjectName("LogoContainer")
-            logo_container.setFixedHeight(60)  # Reduced height without subtitle
+            logo_container.setFixedHeight(100)
 
             # Logo layout
             logo_layout = QHBoxLayout(logo_container)
@@ -146,7 +146,7 @@ class Sidebar(QWidget):
             logo_layout.setSpacing(10)
 
             # Load the actual icon file from resources
-            icon_path = os.path.join(self.program_dir, "resources", "icons", "moinsy.png")
+            icon_path = os.path.join(self.program_dir, "resources", "icons", "moinsy.svg")
             alt_path = os.path.join(self.program_dir, "src", "resources", "icons", "moinsy.png")
 
             # Create logo image label
@@ -167,12 +167,12 @@ class Sidebar(QWidget):
             if pixmap is not None:
                 # Scale the image while preserving aspect ratio
                 scaled_pixmap = pixmap.scaled(
-                    40, 40,
+                    75, 75,
                     Qt.AspectRatioMode.KeepAspectRatio,
                     Qt.TransformationMode.SmoothTransformation
                 )
                 logo_label.setPixmap(scaled_pixmap)
-                logo_label.setFixedSize(40, 40)
+                logo_label.setFixedSize(75, 75)
             else:
                 # If icon not found, use a colored circle as fallback
                 self.logger.warning("Using fallback colored circle for logo")
@@ -183,7 +183,7 @@ class Sidebar(QWidget):
                     color: white;
                     border-radius: 20px;
                     font-weight: bold;
-                    font-size: 20px;
+                    font-size: 40px;
                 """)
                 logo_label.setFixedSize(40, 40)
 
@@ -193,7 +193,7 @@ class Sidebar(QWidget):
             self.logo_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
             self.logo_label.setStyleSheet(f"""
                 color: {Theme.get_color('PRIMARY')};
-                font-size: 18px;
+                font-size: 40px;
                 font-weight: bold;
                 letter-spacing: 2px;
             """)
@@ -509,7 +509,7 @@ class Sidebar(QWidget):
                     self.logo_label.setFont(Theme.get_font('LOGO'))
                 except (AttributeError, KeyError):
                     # Fallback font
-                    self.logo_label.setFont(QFont('JetBrains Mono', 24, QFont.Weight.Bold))
+                    self.logo_label.setFont(QFont('JetBrains Mono', 40, QFont.Weight.Bold))
 
                 # Style with Theme colors
                 self.logo_label.setStyleSheet(f"""
