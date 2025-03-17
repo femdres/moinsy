@@ -6,22 +6,39 @@ Moinsy is a modern, modular installation and system management utility for Linux
 
 ## Features
 
-- **Modular Installation System**: Install curated software packages and configurations with a few clicks
-- **PipeWire Audio Setup**: Easily install and configure the modern PipeWire audio server
-- **Cloud Storage Integration**: Set up OneDrive synchronization on your Linux system
-- **System Tools**: 
-  - System Update utility for keeping your system up-to-date
-  - Service Manager for controlling system services
-  - Hardware Monitor for real-time performance tracking
-  - Command Builder for learning and using Linux commands
+### Installation Management
+- **Multi-Source Software Installation**: Install packages from apt, flatpak, and snap repositories
+- **PipeWire Audio Setup**: Easily install and configure the modern PipeWire audio server with improved sound quality and Bluetooth support
+- **OneDrive Integration**: Set up Microsoft OneDrive synchronization on your Linux system
+- **Bulk Installation**: Install multiple applications with a single operation
+
+### System Tools
+- **System Updater**: Keep your system and applications up-to-date across all package managers
+- **Service Manager**: Control and configure system services with an intuitive interface
+- **Hardware Monitor**: Track system performance metrics in real-time (CPU, memory, storage, GPU)
+- **Command Builder**: Learn and create Linux commands with proper syntax and options
+- **Disk Cleanup**: Remove unnecessary files to free up storage space (coming soon)
+- **Network Tools**: Network diagnostics and configuration tools (coming soon)
+
+### User Interface
+- **Terminal Output**: View command execution progress with colored output
+- **Progress Tracking**: Visual progress indicators for installation operations
+- **Dark Theme**: Eye-friendly interface designed for extended usage
+- **Comprehensive Help**: Built-in documentation for all features
 
 ## Screenshots
+
+*[Add screenshots of the main interface, installation panel, and system tools here]*
 
 ## Requirements
 
 - A Debian-based Linux distribution (Ubuntu, Linux Mint, etc.)
 - Python 3.8 or newer
 - Administrative (sudo) privileges
+- Minimum system requirements:
+  - 2GB RAM
+  - 100MB free disk space
+  - 1024x768 screen resolution
 
 ## Installation
 
@@ -34,8 +51,6 @@ cd moinsy
 ```
 
 ### 2. Run the installer script
-
-![Configure Example](src/resources/icons/configure.png)
 
 ```bash
 chmod +x configure.sh
@@ -68,22 +83,22 @@ You can start Moinsy from your application menu or by running:
 
 1. Click the "Installations" button in the sidebar
 2. Select from available installation options:
-   - Programs: Install multiple applications from a curated list
-   - PipeWire: Set up the modern PipeWire audio server
-   - OneDrive: Configure Microsoft OneDrive integration
-   - Development Tools: Set up programming environments
-   - Media Applications: Install audio/video software
-   - Productivity Suite: Set up office and organizational tools
+   - **Programs**: Install multiple applications from a curated list
+   - **PipeWire**: Set up the modern PipeWire audio server
+   - **OneDrive**: Configure Microsoft OneDrive integration
+   - **Development Tools**: Set up programming environments
+   - **Media Applications**: Install audio/video software
+   - **Productivity Suite**: Set up office and organizational tools
 
 #### System Tools
 
 1. Click the "System Tools" button in the sidebar
 2. Select a tool to use:
-   - System Update: Update your system packages and applications
-   - Service Manager: Control system services
-   - Hardware Monitor: Track system performance in real-time
-   - Disk Cleanup: Remove unnecessary files (coming soon)
-   - Network Tools: Diagnose and configure network settings (coming soon)
+   - **System Update**: Update your system packages and applications
+   - **Service Manager**: Control system services
+   - **Hardware Monitor**: Track system performance in real-time
+   - **Disk Cleanup**: Remove unnecessary files (coming soon)
+   - **Network Tools**: Diagnose and configure network settings (coming soon)
 
 #### Command Builder
 
@@ -96,42 +111,106 @@ The Command Builder helps you learn and create Linux command sequences with prop
 #### Settings
 
 Configure Moinsy's appearance and behavior through the Settings panel, including:
-- Dark/Light theme options
+- Window size and display options
 - Terminal preferences
-- Window sizing
 - System integration options
+- Update behaviors
 
 ## Development
 
+### Project Structure
+
+```
+moinsy/
+├── src/                    # Main source code
+│   ├── core/               # Core functionality
+│   │   ├── command/        # Command execution and parsing
+│   │   ├── installers/     # Installation modules
+│   │   │   ├── programs.py # Programs installer
+│   │   │   └── pipewire.py # PipeWire installer
+│   │   └── tools/          # System tools implementations
+│   │       ├── service_manager.py
+│   │       ├── update_tool.py
+│   │       └── hardware_monitor.py
+│   ├── gui/                # User interface components
+│   │   ├── components/     # UI widgets and dialogs
+│   │   │   ├── sidebar.py
+│   │   │   ├── terminal.py
+│   │   │   ├── command_builder.py
+│   │   │   └── settings/   # Settings components
+│   │   └── styles/         # Theme and styling
+│   ├── managers/           # System managers
+│   │   ├── config_manager.py
+│   │   ├── installation_manager.py
+│   │   └── tools_manager.py
+│   ├── resources/          # Application resources
+│   │   ├── icons/
+│   │   └── configs/
+│   └── utils/              # Utility functions
+├── configure.sh            # Installation script
+├── dev_configure.sh        # Development setup script
+└── requirements.py         # Python dependencies
+```
+
 ### Setting Up Development Environment
 
-1. Clone the repository:
+1. Clone the repository to the installation location:
    ```bash
-   git clone https://github.com/femdres/moinsy.git
-   cd moinsy
+   sudo mkdir -p /opt/moinsy
+   sudo chown $USER:$USER /opt/moinsy
+   git clone https://github.com/femdres/moinsy.git /opt/moinsy
+   cd /opt/moinsy
    ```
 
-2. Create a Python virtual environment:
+2. Run the development configuration script:
+   ```bash
+   chmod +x dev_configure.sh
+   ./dev_configure.sh --dev-deps
+   ```
+
+3. For direct development without installation:
    ```bash
    python3 -m venv venv
    source venv/bin/activate
+   pip install -r requirements.py
+   cd src
+   python3 moinsy.py
    ```
-
-3. Install dependencies:
-   ```bash
-   pip install -r src/requirements.py
-   ```
-
-### Running in Development Mode
-
-For development, you can run Moinsy directly from the source:
-
-```bash
-cd src
-python3 moinsy.py
-```
 
 Note: Some features requiring system privileges may not work correctly without running as root.
+
+### Development Guidelines
+
+1. Use type hints for all function parameters and return values
+2. Include detailed docstrings for classes and methods
+3. Log all significant operations and errors
+4. Handle exceptions appropriately at each level
+5. Follow PEP 8 style guidelines
+6. Run tests before submitting pull requests
+
+## Troubleshooting
+
+### Common Issues
+
+1. **Installation fails with permission error**
+   - Ensure you're running the configure script with sudo privileges
+   - Check if /opt directory is writeable
+
+2. **PipeWire installation doesn't work**
+   - Ensure your system is compatible with PipeWire
+   - Check system logs for specific errors
+
+3. **GUI appears without styling**
+   - Ensure PyQt6 is properly installed
+   - Check if theme files are accessible
+
+### Generating Logs
+
+To generate detailed logs for troubleshooting:
+
+```bash
+/opt/moinsy/run-moinsy.sh --debug > moinsy-debug.log 2>&1
+```
 
 ## Contributing
 
