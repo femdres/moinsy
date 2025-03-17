@@ -16,12 +16,14 @@ from PyQt6.QtWidgets import (
 )
 from PyQt6.QtCore import Qt, pyqtSignal, QSize
 from PyQt6.QtGui import QFont, QIcon, QPixmap
+from PyQt6.QtWidgets import QLayout
+
 import logging
-from typing import Optional, Dict, Any, List, Union
+import time
+from typing import Optional, Dict, Any, List, Union, Tuple, cast
 
 from core.tools.network_tool import NetworkTool
 from gui.styles.theme import Theme
-
 
 class NetworkWindow(QDialog):
     """Network configuration and management window.
@@ -53,6 +55,9 @@ class NetworkWindow(QDialog):
 
         # Load network interfaces
         self.load_interfaces()
+
+        self._monitoring_active = False
+        self._monitoring_data = []
 
         self.logger.debug("Network window initialized")
 
@@ -101,6 +106,9 @@ class NetworkWindow(QDialog):
 
             # Status bar
             self.setup_status_bar(main_layout)
+
+            # Setup export functionality
+            self.setup_export_functionality()
 
             # Apply styling
             self.apply_styling()
@@ -558,11 +566,15 @@ class NetworkWindow(QDialog):
         # Set initial state based on DHCP selection
         self.static_settings_group.setVisible(False)
 
+        self.setup_monitoring_tab()
+
         # Add tabs
         self.tab_widget.addTab(self.log_tab, "Log Output")
         self.tab_widget.addTab(self.ip_config_tab, "IP Configuration")
         self.tab_widget.addTab(self.wireless_tab, "Wireless Networks")
         self.tab_widget.addTab(self.status_tab, "Connection Status")
+
+        self.tab_widget.addTab(self.monitoring_tab, "Network Monitor")
 
         right_layout.addWidget(self.tab_widget)
 
@@ -1398,3 +1410,470 @@ class NetworkWindow(QDialog):
 
             # Run traceroute
             self.network_tool.run_traceroute(target)
+
+    # Add this method to the NetworkWindow class in src/gui/components/network_window.py
+
+    def setup_monitoring_tab(self) -> None:
+        """Setup the network monitoring tab with real-time traffic display.
+
+        Like an astronomer crafting instruments to observe distant galaxies,
+        we design a window through which to glimpse the otherwise invisible
+        traffic of data flowing through our digital realm.
+        """
+        # Create the monitoring tab
+        self.monitoring_tab = QWidget()
+        monitoring_layout = QVBoxLayout(self.monitoring_tab)
+
+        # Control section
+        control_group = QGroupBox("Monitoring Controls")
+        control_group.setStyleSheet(self._get_group_box_style())
+        control_layout = QHBoxLayout(control_group)
+
+        # Interval selection
+        interval_label = QLabel("Update Interval:")
+        interval_label.setStyleSheet(f"color: {Theme.get_color('TEXT_PRIMARY')};")
+        control_layout.addWidget(interval_label)
+
+        self.interval_spin = QSpinBox()
+        self.interval_spin.setRange(1, 60)
+        self.interval_spin.setValue(5)
+        self.interval_spin.setSuffix(" seconds")
+        self._style_spin_box(self.interval_spin)
+        control_layout.addWidget(self.interval_spin)
+
+        control_layout.addStretch()
+
+        # Start/stop button
+        self.monitor_button = QPushButton("Start Monitoring")
+        self.monitor_button.clicked.connect(self.toggle_monitoring)
+        self._style_action_button(self.monitor_button, Theme.get_color('PRIMARY'))
+        control_layout.addWidget(self.monitor_button)
+
+        monitoring_layout.addWidget(control_group)
+
+        # Real-time stats display
+        stats_group = QGroupBox("Traffic Statistics")
+        stats_group.setStyleSheet(self._get_group_box_style())
+        stats_layout = QVBoxLayout(stats_group)
+
+        # Create traffic display
+        self.monitoring_display = QTextEdit()
+        self.monitoring_display.setReadOnly(True)
+        self.monitoring_display.setStyleSheet(f"""
+            QTextEdit {{
+                background-color: {Theme.get_color('BG_DARK')};
+                color: {Theme.get_color('TEXT_PRIMARY')};
+                border: none;
+                border-radius: 4px;
+                padding: 10px;
+                font-family: 'Consolas', 'Courier New', monospace;
+            }}
+        """)
+        stats_layout.addWidget(self.monitoring_display)
+
+        # Create gauges for download/upload
+        gauges_layout = QHBoxLayout()
+
+        # Download gauge
+        download_frame = QFrame()
+        download_frame.setStyleSheet(f"""
+            QFrame {{
+                background-color: {Theme.get_color('BG_DARK')};
+                border-radius: 4px;
+                padding: 10px;
+            }}
+        """)
+        download_layout = QVBoxLayout(download_frame)
+
+        download_label = QLabel("Download Speed")
+        download_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        download_label.setStyleSheet(f"color: {Theme.get_color('TEXT_PRIMARY')};")
+        download_layout.addWidget(download_label)
+
+        self.download_value = QLabel("0 KB/s")
+        self.download_value.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.download_value.setStyleSheet(f"""
+            color: {Theme.get_color('SUCCESS')};
+            font-size: 18px;
+            font-weight: bold;
+        """)
+        download_layout.addWidget(self.download_value)
+
+        gauges_layout.addWidget(download_frame)
+
+        # Upload gauge
+        upload_frame = QFrame()
+        upload_frame.setStyleSheet(f"""
+            QFrame {{
+                background-color: {Theme.get_color('BG_DARK')};
+                border-radius: 4px;
+                padding: 10px;
+            }}
+        """)
+        upload_layout = QVBoxLayout(upload_frame)
+
+        upload_label = QLabel("Upload Speed")
+        upload_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        upload_label.setStyleSheet(f"color: {Theme.get_color('TEXT_PRIMARY')};")
+        upload_layout.addWidget(upload_label)
+
+        self.upload_value = QLabel("0 KB/s")
+        self.upload_value.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.upload_value.setStyleSheet(f"""
+            color: {Theme.get_color('WARNING')};
+            font-size: 18px;
+            font-weight: bold;
+        """)
+        upload_layout.addWidget(self.upload_value)
+
+        gauges_layout.addWidget(upload_frame)
+
+        stats_layout.addLayout(gauges_layout)
+
+        monitoring_layout.addWidget(stats_group)
+
+        # Add the tab
+        self.tab_widget.addTab(self.monitoring_tab, "Network Monitor")
+
+        # Connect to network_info_updated signal to handle monitoring data
+        self.network_tool.network_info_updated.connect(self.update_monitor_display)
+
+        # Initialize monitoring state
+        self._monitoring_active = False
+
+    def toggle_monitoring(self) -> None:
+        """Toggle network traffic monitoring on/off.
+
+        Like a switch that controls the flow of attention rather than electricity,
+        this method either summons our vigilant gaze upon network traffic or
+        releases it to wander elsewhere, giving us the illusion of control over
+        what we observe in the digital realm.
+        """
+        if not self._monitoring_active:
+            # Start monitoring
+            interval = self.interval_spin.value()
+            if self.network_tool.start_monitoring(interval):
+                self._monitoring_active = True
+                self.monitor_button.setText("Stop Monitoring")
+                self.monitor_button.setStyleSheet(f"""
+                    QPushButton {{
+                        background-color: {Theme.get_color('ERROR')};
+                        color: white;
+                        border: none;
+                        border-radius: 4px;
+                        padding: 10px;
+                        font-weight: bold;
+                    }}
+                    QPushButton:hover {{
+                        background-color: {Theme.adjust_color(Theme.get_color('ERROR'), -20)};
+                    }}
+                """)
+                # Clear the display
+                self.monitoring_display.clear()
+                self.monitoring_display.append("<b>Network Monitoring Active</b>")
+                self.monitoring_display.append(f"Updating every {interval} seconds...")
+                self.monitoring_display.append("-" * 50)
+        else:
+            # Stop monitoring
+            self.network_tool.stop_monitoring()
+            self._monitoring_active = False
+            self.monitor_button.setText("Start Monitoring")
+            self._style_action_button(self.monitor_button, Theme.get_color('PRIMARY'))
+            self.monitoring_display.append("<b>Network Monitoring Stopped</b>")
+
+    def update_monitor_display(self, network_info: Dict[str, Any]) -> None:
+        """Update monitoring display with the latest traffic data.
+
+        Args:
+            network_info: Dictionary containing network information
+
+        Like a scribe recording the passage of invisible messengers,
+        this method updates our display with the latest whispers of
+        data flowing through our digital veins.
+        """
+        # Process monitor data if available
+        if "monitor_data" in network_info:
+            monitor_data = network_info["monitor_data"]
+
+            # Update the gauges
+            rx_rate = monitor_data.get("rx_rate", 0)
+            tx_rate = monitor_data.get("tx_rate", 0)
+
+            # Format values for display
+            if rx_rate >= 1024:
+                download_text = f"{rx_rate / 1024:.2f} MB/s"
+            else:
+                download_text = f"{rx_rate:.2f} KB/s"
+
+            if tx_rate >= 1024:
+                upload_text = f"{tx_rate / 1024:.2f} MB/s"
+            else:
+                upload_text = f"{tx_rate:.2f} KB/s"
+
+            self.download_value.setText(download_text)
+            self.upload_value.setText(upload_text)
+
+            # Change color based on activity level
+            if rx_rate > 100:  # More than 100 KB/s
+                self.download_value.setStyleSheet(f"""
+                    color: {Theme.get_color('SUCCESS')};
+                    font-size: 18px;
+                    font-weight: bold;
+                """)
+            else:
+                self.download_value.setStyleSheet(f"""
+                    color: {Theme.get_color('TEXT_PRIMARY')};
+                    font-size: 18px;
+                    font-weight: bold;
+                """)
+
+            if tx_rate > 50:  # More than 50 KB/s
+                self.upload_value.setStyleSheet(f"""
+                    color: {Theme.get_color('WARNING')};
+                    font-size: 18px;
+                    font-weight: bold;
+                """)
+            else:
+                self.upload_value.setStyleSheet(f"""
+                    color: {Theme.get_color('TEXT_PRIMARY')};
+                    font-size: 18px;
+                    font-weight: bold;
+                """)
+
+            # Append to monitoring display
+            timestamp = time.strftime("%H:%M:%S", time.localtime(monitor_data.get("timestamp", time.time())))
+            state = monitor_data.get("state", "unknown")
+
+            # Format the state with color
+            if state.lower() == "up":
+                state_text = f'<span style="color: {Theme.get_color("SUCCESS")}">UP</span>'
+            else:
+                state_text = f'<span style="color: {Theme.get_color("ERROR")}">{state.upper()}</span>'
+
+            # Create the log entry
+            log_entry = (
+                f"[{timestamp}] {monitor_data.get('interface', 'unknown')} ({state_text}) | "
+                f"↓ {download_text} ({monitor_data.get('rx_packets', 0)} packets) | "
+                f"↑ {upload_text} ({monitor_data.get('tx_packets', 0)} packets)"
+            )
+
+            self.monitoring_display.append(log_entry)
+
+            # Limit the number of entries to prevent memory issues
+            document = self.monitoring_display.document()
+            if document.blockCount() > 100:  # Keep last 100 entries
+                cursor = self.monitoring_display.textCursor()
+                cursor.movePosition(cursor.MoveOperation.Start)
+                cursor.movePosition(cursor.MoveOperation.Down, cursor.MoveMode.KeepAnchor, 1)
+                cursor.removeSelectedText()
+
+            # Auto-scroll to bottom
+            scrollbar = self.monitoring_display.verticalScrollBar()
+            scrollbar.setValue(scrollbar.maximum())
+
+            # Store monitoring data for export (limited to last 1000 entries)
+            if "monitor_data" in network_info:
+                self._monitoring_data.append(network_info["monitor_data"])
+                # Keep only the last 1000 entries to prevent memory issues
+                if len(self._monitoring_data) > 1000:
+                    self._monitoring_data = self._monitoring_data[-1000:]
+
+    def closeEvent(self, event):
+        """Handle cleanup when the window is closed.
+
+        Like a digital being performing last rites before dispersing into
+        the void, this method ensures our monitoring processes are gracefully
+        terminated before our window ceases to exist.
+        """
+        # Stop monitoring if active
+        if hasattr(self, '_monitoring_active') and self._monitoring_active:
+            self.network_tool.stop_monitoring()
+
+        # Accept the close event
+        event.accept()
+
+    def setup_export_functionality(self) -> None:
+        """Add export buttons to relevant tabs.
+
+        Like an archivist adding preservation tools to a digital museum,
+        this method equips our interface with the means to capture and
+        preserve the otherwise transient data flowing through our networks.
+        """
+        # Add export button to monitoring tab
+        if hasattr(self, 'monitoring_tab'):
+            # Find the control_layout in the monitoring tab
+            control_group = self.monitoring_tab.findChild(QGroupBox, "Monitoring Controls")
+            if control_group and control_group.layout():
+                # Add export button before the monitor button
+                export_button = QPushButton("Export Data")
+                export_button.clicked.connect(self.export_monitoring_data)
+                self._style_action_button(export_button, Theme.get_color('SECONDARY'))
+
+                # Insert before the last item (monitor button)
+                control_group.layout().insertWidget(control_group.layout().count() - 1, export_button)
+
+        # Add export button to connection status tab
+        if hasattr(self, 'status_tab'):
+            # Find the conn_group in the status tab
+            conn_group = self.status_tab.findChild(QGroupBox, "Connection Statistics")
+            if conn_group and conn_group.layout():
+                # Add export button
+                export_button = QPushButton("Export Traffic Data")
+                export_button.clicked.connect(self.export_traffic_data)
+                self._style_action_button(export_button, Theme.get_color('SECONDARY'))
+
+                # Add to layout
+                conn_group.layout().addWidget(export_button)
+
+    def export_traffic_data(self) -> None:
+        """Export current traffic statistics to a CSV file.
+
+        Like a photographer capturing a single moment in the endless
+        flow of digital time, this method freezes the current state
+        of network traffic into a structured document.
+        """
+        from PyQt6.QtWidgets import QFileDialog
+        from datetime import datetime
+
+        ifname = self.get_selected_interface()
+        if not ifname:
+            self.handle_error("No interface selected")
+            return
+
+        # Generate default filename with timestamp
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        default_filename = f"network_traffic_{ifname}_{timestamp}.csv"
+
+        # Get save location
+        filepath, _ = QFileDialog.getSaveFileName(
+            self,
+            "Export Traffic Data",
+            default_filename,
+            "CSV Files (*.csv);;All Files (*)"
+        )
+
+        if filepath:
+            # Call the export function
+            if self.network_tool.export_traffic_data(filepath):
+                self.append_log(f"Traffic data exported to: {filepath}", "green")
+            else:
+                self.append_log("Failed to export traffic data", "red")
+
+    def export_monitoring_data(self) -> None:
+        """Export network monitoring log to a CSV file.
+
+        Like an archaeologist preserving artifacts from a digital excavation,
+        this method archives the collected monitoring data for future analysis.
+        """
+        from PyQt6.QtWidgets import QFileDialog, QMessageBox
+        from datetime import datetime
+
+        # Check if we have monitoring data
+        if not hasattr(self, '_monitoring_data') or not self._monitoring_data:
+            # Monitoring data hasn't been explicitly tracked - inform the user
+            reply = QMessageBox.question(
+                self,
+                "No Stored Monitoring Data",
+                "No monitoring history has been explicitly stored. Would you like to export the current display content instead?",
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                QMessageBox.StandardButton.No
+            )
+
+            if reply != QMessageBox.StandardButton.Yes:
+                return
+
+            # Parse monitoring display content
+            monitoring_data = self._parse_monitoring_display()
+        else:
+            monitoring_data = self._monitoring_data
+
+        if not monitoring_data:
+            self.handle_error("No monitoring data available to export")
+            return
+
+        # Generate default filename with timestamp
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        ifname = self.get_selected_interface() or "unknown"
+        default_filename = f"network_monitor_{ifname}_{timestamp}.csv"
+
+        # Get save location
+        filepath, _ = QFileDialog.getSaveFileName(
+            self,
+            "Export Monitoring Data",
+            default_filename,
+            "CSV Files (*.csv);;All Files (*)"
+        )
+
+        if filepath:
+            # Call the export function
+            if self.network_tool.export_monitoring_log(filepath, monitoring_data):
+                self.append_log(f"Monitoring data exported to: {filepath}", "green")
+            else:
+                self.append_log("Failed to export monitoring data", "red")
+
+    def _parse_monitoring_display(self) -> List[Dict[str, Any]]:
+        """Parse monitoring display text into structured data.
+
+        Returns:
+            List of dictionaries containing monitoring data entries
+
+        Like a digital archaeologist deciphering fragmentary texts,
+        this method attempts to reconstruct structured data from
+        the textual remnants displayed in our monitoring window.
+        """
+        if not hasattr(self, 'monitoring_display'):
+            return []
+
+        import re
+        import time
+        from datetime import datetime
+
+        monitoring_data = []
+
+        # Get the text from the display
+        text = self.monitoring_display.toPlainText()
+
+        # Regular expression to match log entries
+        # Format: [HH:MM:SS] interface (state) | ↓ X.XX KB/s (Y packets) | ↑ Z.ZZ KB/s (W packets)
+        pattern = r'\[(\d+:\d+:\d+)\] (\w+) \(([A-Z]+)\) \| ↓ ([\d.]+) (KB/s|MB/s) \((\d+) packets\) \| ↑ ([\d.]+) (KB/s|MB/s) \((\d+) packets\)'
+
+        # Find all matches
+        matches = re.findall(pattern, text)
+
+        # Current date for timestamp
+        today = datetime.now().strftime("%Y-%m-%d")
+
+        for match in matches:
+            time_str, interface, state, rx_rate, rx_unit, rx_packets, tx_rate, tx_unit, tx_packets = match
+
+            # Convert rates to KB/s
+            rx_rate_float = float(rx_rate)
+            if rx_unit == "MB/s":
+                rx_rate_float *= 1024
+
+            tx_rate_float = float(tx_rate)
+            if tx_unit == "MB/s":
+                tx_rate_float *= 1024
+
+            # Create timestamp
+            timestamp_str = f"{today} {time_str}"
+            try:
+                timestamp = datetime.strptime(timestamp_str, "%Y-%m-%d %H:%M:%S").timestamp()
+            except ValueError:
+                # Fallback to current time if parsing fails
+                timestamp = time.time()
+
+            # Create data entry
+            entry = {
+                "timestamp": timestamp,
+                "interface": interface,
+                "state": state,
+                "rx_rate": rx_rate_float,
+                "tx_rate": tx_rate_float,
+                "rx_packets": int(rx_packets),
+                "tx_packets": int(tx_packets)
+            }
+
+            monitoring_data.append(entry)
+
+        return monitoring_data

@@ -12,8 +12,8 @@ import socket
 import ipaddress
 import re
 import json
-import time
 import os
+import time
 from typing import List, Dict, Any, Optional, Tuple, Union, Set, cast
 
 from utils.system_utils import execute_command
@@ -1381,3 +1381,303 @@ class NetworkTool(QObject):
             return result.returncode == 0
         except Exception:
             return False
+
+    def start_monitoring(self, interval: int = 5) -> bool:
+        """Start continuous monitoring of network interface statistics.
+
+        Args:
+            interval: Time between updates in seconds
+
+        Returns:
+            True if monitoring started successfully
+
+        Like a vigilant sentinel standing watch over digital frontiers,
+        this method initiates the endless cycle of observation, measuring
+        the ebb and flow of data across our tenuous connections to the void.
+        """
+        if not self.selected_interface:
+            self.error_occurred.emit("No interface selected for monitoring")
+            return False
+
+        try:
+            from PyQt6.QtCore import QTimer
+
+            # Store the initial statistics for calculating deltas
+            if self.selected_interface in self.interfaces:
+                self._initial_stats = self.interfaces[self.selected_interface].get("statistics", {}).copy()
+            else:
+                self._initial_stats = {}
+
+            # Create monitoring timer if it doesn't exist
+            if not hasattr(self, '_monitor_timer'):
+                self._monitor_timer = QTimer()
+                self._monitor_timer.timeout.connect(self._update_monitor_stats)
+
+            # Set interval and start timer
+            self._monitor_timer.setInterval(interval * 1000)
+            self._monitor_timer.start()
+
+            self.log_output.emit(
+                f"Started monitoring interface {self.selected_interface} (updates every {interval} seconds)")
+            return True
+
+        except Exception as e:
+            error_msg = f"Failed to start network monitoring: {str(e)}"
+            self.error_occurred.emit(error_msg)
+            self.logger.error(error_msg)
+            return False
+
+    def stop_monitoring(self) -> None:
+        """Stop network interface monitoring.
+
+        Like a weary observer finally closing their eyes after a long vigil,
+        this method terminates our ceaseless digital surveillance, allowing
+        the network to flow unobserved once more.
+        """
+        if hasattr(self, '_monitor_timer') and self._monitor_timer.isActive():
+            self._monitor_timer.stop()
+            self.log_output.emit("Network monitoring stopped")
+
+    def _update_monitor_stats(self) -> None:
+        """Update network statistics during monitoring.
+
+        Calculate and emit changes in network traffic since monitoring began,
+        offering glimpses into the frenetic dance of packets traversing our
+        digital nervous system.
+        """
+        try:
+            # Refresh interface data
+            self.get_network_interfaces()
+
+            if not self.selected_interface or self.selected_interface not in self.interfaces:
+                self.stop_monitoring()
+                self.error_occurred.emit("Selected interface is no longer available")
+                return
+
+            # Get current stats
+            current_stats = self.interfaces[self.selected_interface].get("statistics", {})
+
+            # Calculate deltas from initial stats
+            if self._initial_stats:
+                rx_bytes_delta = current_stats.get("rx_bytes", 0) - self._initial_stats.get("rx_bytes", 0)
+                tx_bytes_delta = current_stats.get("tx_bytes", 0) - self._initial_stats.get("tx_bytes", 0)
+                rx_packets_delta = current_stats.get("rx_packets", 0) - self._initial_stats.get("rx_packets", 0)
+                tx_packets_delta = current_stats.get("tx_packets", 0) - self._initial_stats.get("tx_packets", 0)
+
+                # Convert to KB/s based on timer interval (in milliseconds)
+                interval_seconds = getattr(self._monitor_timer, 'interval', 5000) / 1000
+                rx_rate = rx_bytes_delta / (1024 * interval_seconds)  # KB/s
+                tx_rate = tx_bytes_delta / (1024 * interval_seconds)  # KB/s
+
+                # Create monitoring update
+                monitor_data = {
+                    "interface": self.selected_interface,
+                    "rx_rate": rx_rate,
+                    "tx_rate": tx_rate,
+                    "rx_packets": rx_packets_delta,
+                    "tx_packets": tx_packets_delta,
+                    "state": self.interfaces[self.selected_interface].get("state", "unknown"),
+                    "timestamp": time.time()
+                }
+
+                # Update the initial stats for the next interval
+                self._initial_stats = current_stats.copy()
+
+                # Emit monitoring update
+                self.log_output.emit(
+                    f"Network traffic: ↓ {rx_rate:.2f} KB/s ({rx_packets_delta} packets) | "
+                    f"↑ {tx_rate:.2f} KB/s ({tx_packets_delta} packets)"
+                )
+
+                # Emit a signal with the monitoring data that the UI can use
+                self.network_info_updated.emit({"monitor_data": monitor_data})
+
+        except Exception as e:
+            error_msg = f"Error updating network monitor: {str(e)}"
+            self.error_occurred.emit(error_msg)
+            self.logger.error(error_msg)
+
+    def export_traffic_data(self, filepath: str) -> bool:
+        """Export network traffic data to a CSV file.
+
+        Args:
+            filepath: Path where the CSV file will be saved
+
+        Returns:
+            True if export was successful
+
+        Like a digital archaeologist preserving artifacts of ephemeral transmissions,
+        this method captures fleeting network statistics and entombs them in the
+        structured sepulcher of a CSV file, a futile act of preservation in
+        the face of the ever-flowing river of data.
+        """
+        if not self.selected_interface or self.selected_interface not in self.interfaces:
+            self.error_occurred.emit("No valid interface selected for export")
+            return False
+
+        try:
+            import csv
+            from datetime import datetime
+
+            # Get current interface stats
+            interface = self.interfaces[self.selected_interface]
+            stats = interface.get("statistics", {})
+            addresses = interface.get("addresses", [])
+            wireless_info = interface.get("wireless_info", {}) if interface.get("wireless", False) else {}
+
+            # Format current timestamp
+            timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+            # Prepare data for CSV
+            header = [
+                "Timestamp", "Interface", "Type", "State", "MAC Address",
+                "IPv4 Addresses", "IPv6 Addresses", "RX Bytes", "TX Bytes",
+                "RX Packets", "TX Packets", "RX Errors", "TX Errors"
+            ]
+
+            # Add wireless columns if applicable
+            if interface.get("wireless", False):
+                header.extend(["SSID", "Signal Level", "Frequency", "Bit Rate"])
+
+            # Get IP addresses as comma-separated strings
+            ipv4_addrs = []
+            ipv6_addrs = []
+            for addr in addresses:
+                if addr.get("type") == "ipv4":
+                    ipv4_addrs.append(f"{addr.get('address', '')}/{addr.get('prefix', '')}")
+                elif addr.get("type") == "ipv6":
+                    ipv6_addrs.append(f"{addr.get('address', '')}/{addr.get('prefix', '')}")
+
+            # Prepare row data
+            row = [
+                timestamp,
+                self.selected_interface,
+                interface.get("type", "unknown"),
+                interface.get("state", "unknown"),
+                interface.get("mac_address", ""),
+                ";".join(ipv4_addrs),
+                ";".join(ipv6_addrs),
+                stats.get("rx_bytes", 0),
+                stats.get("tx_bytes", 0),
+                stats.get("rx_packets", 0),
+                stats.get("tx_packets", 0),
+                stats.get("rx_errors", 0),
+                stats.get("tx_errors", 0)
+            ]
+
+            # Add wireless info if applicable
+            if interface.get("wireless", False):
+                row.extend([
+                    wireless_info.get("ssid", ""),
+                    wireless_info.get("signal_level", ""),
+                    wireless_info.get("frequency", ""),
+                    wireless_info.get("bit_rate", "")
+                ])
+
+            # Write to CSV file
+            with open(filepath, 'w', newline='') as csvfile:
+                writer = csv.writer(csvfile)
+                writer.writerow(header)
+                writer.writerow(row)
+
+            self.log_output.emit(f"Network traffic data exported to: {filepath}")
+            return True
+
+        except Exception as e:
+            error_msg = f"Failed to export traffic data: {str(e)}"
+            self.error_occurred.emit(error_msg)
+            self.logger.error(error_msg)
+            return False
+
+    # Add this method to create traffic monitoring log exports with multiple entries
+    def export_monitoring_log(self, filepath: str, monitoring_data: List[Dict[str, Any]]) -> bool:
+        """Export network monitoring log to a CSV file.
+
+        Args:
+            filepath: Path where the CSV file will be saved
+            monitoring_data: List of monitoring data entries
+
+        Returns:
+            True if export was successful
+
+        Like a historian meticulously recording the ebb and flow of digital tides,
+        this method preserves the temporal patterns of network activity, creating
+        a fossil record of our ephemeral connections to the void.
+        """
+        if not monitoring_data:
+            self.error_occurred.emit("No monitoring data available for export")
+            return False
+
+        try:
+            import csv
+            from datetime import datetime
+
+            # Prepare header
+            header = [
+                "Timestamp", "Interface", "State",
+                "Download Speed (KB/s)", "Upload Speed (KB/s)",
+                "Download Packets", "Upload Packets"
+            ]
+
+            # Create rows from monitoring data
+            rows = []
+            for entry in monitoring_data:
+                timestamp = datetime.fromtimestamp(entry.get("timestamp", 0)).strftime("%Y-%m-%d %H:%M:%S")
+                rows.append([
+                    timestamp,
+                    entry.get("interface", "unknown"),
+                    entry.get("state", "unknown"),
+                    entry.get("rx_rate", 0),
+                    entry.get("tx_rate", 0),
+                    entry.get("rx_packets", 0),
+                    entry.get("tx_packets", 0)
+                ])
+
+            # Write to CSV file
+            with open(filepath, 'w', newline='') as csvfile:
+                writer = csv.writer(csvfile)
+                writer.writerow(header)
+                writer.writerows(rows)
+
+            self.log_output.emit(f"Network monitoring log exported to: {filepath}")
+            return True
+
+        except Exception as e:
+            error_msg = f"Failed to export monitoring log: {str(e)}"
+            self.error_occurred.emit(error_msg)
+            self.logger.error(error_msg)
+            return False
+
+    def get_interface_names_by_type(self, interface_type: str = None) -> List[str]:
+        """Get list of interface names, optionally filtered by type.
+
+        Args:
+            interface_type: Optional type to filter by (e.g., 'ethernet', 'wireless')
+
+        Returns:
+            List of interface names
+
+        Like a census taker categorizing citizens by profession,
+        this method groups our network interfaces by their digital vocations,
+        allowing us to selectively communicate with those whose purpose
+        aligns with our current needs.
+        """
+        try:
+            # Get interfaces
+            interfaces = self.interfaces
+
+            # Filter by type if specified
+            if interface_type:
+                return [
+                    name for name, data in interfaces.items()
+                    if data.get("type", "") == interface_type
+                ]
+
+            # Return all interfaces
+            return list(interfaces.keys())
+
+        except Exception as e:
+            error_msg = f"Error getting interface names: {str(e)}"
+            self.error_occurred.emit(error_msg)
+            self.logger.error(error_msg)
+            return []

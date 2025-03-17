@@ -85,7 +85,7 @@ class SystemToolsWindow(QDialog):
             ("Disk Cleanup", "Remove temporary and unused files", "#2196F3",
              lambda: self.launch_tool(None)),
             ("Network Tools", "Network diagnostics and configuration", "#9C27B0",
-             lambda: self.launch_tool(None)),
+             lambda: self.launch_tool(self.start_network_tool)),
             ("Service Manager", "Manage system services", "#FF9800",
              lambda: self.launch_tool(self.start_service_manager)),
             ("Backup Tools", "System backup and restore options", "#00BCD4",
@@ -243,3 +243,15 @@ class SystemToolsWindow(QDialog):
             self.parent_window.start_service_manager()
         else:
             self.logger.error("Parent window doesn't have start_service_manager method")
+
+    def start_network_tool(self):
+        """Launch the network configuration tool.
+
+        Like a digital pilgrim embarking on a journey through invisible pathways,
+        this method initiates the user's quest to tame the chaotic realm of
+        network configurations.
+        """
+        if hasattr(self.parent_window, 'start_network_tool'):
+            self.parent_window.start_network_tool()
+        else:
+            self.logger.error("Parent window doesn't have start_network_tool method")

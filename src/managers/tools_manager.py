@@ -118,6 +118,46 @@ class ToolsManager(QObject):
         self.log_output.emit("Starting Service Manager...", "white")
         self.service_manager.list_services()
 
+    def start_network_tool(self):
+        """Initialize and launch the network configuration tool.
+
+        Like a digital cartographer mapping the invisible pathways of data,
+        this method summons forth the interface through which users may
+        attempt to impose order on the chaotic realm of network configurations.
+        """
+        from gui.components.network_window import NetworkWindow
+
+        self.log_output.emit("Launching Network Configuration Tool...", "white")
+        self.update_progress.emit(10, "Initializing")
+
+        try:
+            network_window = NetworkWindow(self.parent())
+            network_window.setStyleSheet("""
+                QDialog {
+                    background-color: #1a1b1e;
+                }
+            """)
+
+            # Apply window settings
+            window_size = self.config_manager.get_setting(
+                "general", "window_size", {"width": 1000, "height": 800}
+            )
+            if window_size:
+                # Use slightly smaller size than main window
+                width = int(window_size.get("width", 1000) * 0.9)
+                height = int(window_size.get("height", 800) * 0.9)
+                network_window.resize(width, height)
+
+            self.update_progress.emit(100, "Ready")
+            network_window.exec()
+
+            self.log_output.emit("Network configuration session completed.", "white")
+        except Exception as e:
+            error_msg = f"Failed to launch network configuration tool: {str(e)}"
+            self.logger.error(error_msg)
+            self.error_occurred.emit(error_msg)
+            self.update_progress.emit(0, "Error")
+
     def handle_user_input(self, prompt, callback):
         """Handle user input requests"""
         self.log_output.emit(prompt, "white")

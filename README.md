@@ -7,10 +7,9 @@ Moinsy is a modern, modular installation and system management utility for Linux
 ## Features
 
 ### Installation Management
-- **Multi-Source Software Installation**: Install packages from apt, flatpak, and snap repositories
+- **Multi-Source Software Installation**: Install multiple applications and packages from apt, flatpak, and snap repositories in bulk
 - **PipeWire Audio Setup**: Easily install and configure the modern PipeWire audio server with improved sound quality and Bluetooth support
 - **OneDrive Integration**: Set up Microsoft OneDrive synchronization on your Linux system
-- **Bulk Installation**: Install multiple applications with a single operation
 
 ### System Tools
 - **System Updater**: Keep your system and applications up-to-date across all package managers
@@ -37,7 +36,7 @@ Moinsy is a modern, modular installation and system management utility for Linux
 - Administrative (sudo) privileges
 - Minimum system requirements:
   - 2GB RAM
-  - 100MB free disk space
+  - 300MB free disk space
   - 1024x768 screen resolution
 
 ## Installation
