@@ -1,10 +1,11 @@
 from PyQt6.QtCore import QObject, pyqtSignal
 import subprocess
 import logging
-from typing import Optional, Dict, Any, List
+from typing import Optional, Dict, Any, List, Union, cast
 
 from managers.config_manager import ConfigManager
 from gui.components.settings.settings_window import SettingsWindow
+from gui.components.network_window import NetworkWindow
 
 
 class ToolsManager(QObject):
