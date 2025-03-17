@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="600" height="400" viewBox="0 0 600 400">
+  <!-- Dark background -->
+  <rect width="600" height="400" fill="#1a1b1e" rx="10" ry="10"/>
+
+  <!-- Logo placement -->
+  <g transform="translate(200, 100) scale(1.2)">
+    <!-- Background Circle -->
+    <circle cx="100" cy="100" r="90" fill="#1a1b1e" stroke="#2a2a2a" stroke-width="1"/>
+
+    <!-- Simple "M" glyph that suggests installation/system integration -->
+    <path d="M65,140 L65,70 L85,70 L100,100 L115,70 L135,70 L135,140 L115,140 L115,95 L100,125 L85,95 L85,140 Z" 
+          fill="#4CAF50" />
+
+    <!-- Subtle penguin silhouette as a blue dot/accent -->
+    <circle cx="100" cy="45" r="10" fill="#2196F3" />
+
+    <!-- Minimalist orbit suggestion - single arc -->
+    <path d="M100,155 A55,55 0 0,1 155,100" fill="none" stroke="#2196F3" stroke-width="2" stroke-linecap="round" />
+  </g>
+
+  <!-- Tagline -->
+  <text x="320" y="367" font-family="'Segoe UI', sans-serif" font-size="16"
+        fill="#888888" text-anchor="middle">Modular Installation System</text>
+
+</svg>
