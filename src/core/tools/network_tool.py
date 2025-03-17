@@ -209,28 +209,75 @@ class NetworkTool(QObject):
             return "other"
 
     def _identify_wireless_interfaces(self) -> None:
-        """Identify which interfaces are wireless using iwconfig."""
-        try:
-            result = execute_command(["iwconfig"], return_output=True)
-            if not isinstance(result, str):
-                self.logger.warning("iwconfig command failed, cannot identify wireless interfaces")
-                return
+        """Identify which interfaces are wireless using multiple detection methods.
 
-            # Process output to identify wireless interfaces
-            current_interface = None
-            for line in result.split('\n'):
-                if not line.startswith(' '):
-                    # This is a new interface line
-                    parts = line.split()
-                    if len(parts) > 0:
-                        current_interface = parts[0]
-                        # Check if it's a wireless interface (not "no wireless extensions")
-                        if "no wireless extensions" not in line and current_interface in self.interfaces:
-                            self.interfaces[current_interface]["wireless"] = True
+        Like an archaeologist attempting to decipher ancient hieroglyphs with multiple
+        Rosetta stones, we employ various techniques to identify wireless interfaces,
+        knowing full well that the universe's entropy ensures some systems will remain
+        stubbornly inscrutable regardless of our efforts.
+        """
+        try:
+            # Method 1: Use iwconfig (traditional but not always reliable)
+            iwconfig_detected = set()
+            result = execute_command(["iwconfig"], return_output=True)
+            if isinstance(result, str):
+                # Process output to identify wireless interfaces
+                current_interface = None
+                for line in result.split('\n'):
+                    if not line.startswith(' '):
+                        # This is a new interface line
+                        parts = line.split()
+                        if len(parts) > 0:
+                            current_interface = parts[0]
+                            # Check if it's a wireless interface (not "no wireless extensions")
+                            if "no wireless extensions" not in line and current_interface in self.interfaces:
+                                self.interfaces[current_interface]["wireless"] = True
+                                iwconfig_detected.add(current_interface)
+
+            # Method 2: Check for wireless interfaces by naming convention
+            # Common wireless interface naming patterns
+            wireless_patterns = ['wlan', 'wlp', 'wls', 'wifi', 'ath', 'wl']
+            for ifname in self.interfaces:
+                for pattern in wireless_patterns:
+                    if ifname.startswith(pattern):
+                        self.interfaces[ifname]["wireless"] = True
+                        self.logger.debug(f"Interface {ifname} identified as wireless by naming pattern")
+
+            # Method 3: Check /sys/class/net/{ifname}/wireless directory existence
+            for ifname in self.interfaces:
+                if os.path.exists(f"/sys/class/net/{ifname}/wireless"):
+                    self.interfaces[ifname]["wireless"] = True
+                    self.logger.debug(f"Interface {ifname} identified as wireless by sysfs")
+
+            # Method 4: Use iw dev command as a fallback
+            if not any(self.interfaces.get(ifname, {}).get("wireless", False) for ifname in self.interfaces):
+                result = execute_command(["iw", "dev"], return_output=True)
+                if isinstance(result, str):
+                    current_interface = None
+                    for line in result.split('\n'):
+                        if "Interface" in line:
+                            parts = line.strip().split()
+                            if len(parts) >= 2:
+                                ifname = parts[1]
+                                if ifname in self.interfaces:
+                                    self.interfaces[ifname]["wireless"] = True
+                                    self.logger.debug(f"Interface {ifname} identified as wireless by iw dev")
+
+            # Log the results of our archaeological expedition into interface taxonomy
+            wireless_interfaces = [name for name, data in self.interfaces.items()
+                                   if data.get("wireless", False)]
+
+            if wireless_interfaces:
+                self.logger.info(f"Identified wireless interfaces: {', '.join(wireless_interfaces)}")
+            else:
+                self.logger.warning("No wireless interfaces detected despite wireless connectivity being reported")
+                # One last desperate attempt - log all interfaces for debugging
+                self.logger.debug(f"All detected interfaces: {', '.join(self.interfaces.keys())}")
 
         except Exception as e:
             self.logger.warning(f"Error identifying wireless interfaces: {str(e)}")
             # Non-fatal error, continue without wireless identification
+            # The digital void swallows our error silently, another small tragedy
 
     def _get_interface_details(self) -> None:
         """Get additional details about network interfaces."""
@@ -1280,15 +1327,31 @@ class NetworkTool(QObject):
             self.update_progress.emit(0)
             return []
 
-    def _signal_strength_bars(self, signal: int) -> str:
-        """Convert signal strength percentage to a bar representation.
+    def _signal_strength_bars(self, signal: Union[int, str]) -> str:
+        """Convert signal strength to a bar representation with existential awareness.
 
         Args:
             signal: Signal strength percentage (0-100)
 
         Returns:
             String representation of signal bars
+
+        Like an artist converting the invisible electromagnetic waves into a
+        visual representation humans can comprehend, we transform arbitrary
+        numeric values into a meaningful pattern of symbols - regardless
+        of the signal's original encoding.
         """
+        # Ensure signal is numeric despite whatever form the void has provided
+        if isinstance(signal, str):
+            try:
+                signal = int(signal)
+            except (ValueError, TypeError):
+                # In the face of absurdity, we default to the lowest signal
+                signal = 0
+        elif not isinstance(signal, (int, float)):
+            signal = 0
+
+        # Convert numeric value to symbolic representation
         if signal >= 80:
             return "▮▮▮▮▮"
         elif signal >= 60:
@@ -1408,13 +1471,16 @@ class NetworkTool(QObject):
             else:
                 self._initial_stats = {}
 
+            # Store the interval explicitly to avoid method/property confusion
+            self._monitoring_interval = interval  # Store in seconds
+
             # Create monitoring timer if it doesn't exist
             if not hasattr(self, '_monitor_timer'):
                 self._monitor_timer = QTimer()
                 self._monitor_timer.timeout.connect(self._update_monitor_stats)
 
             # Set interval and start timer
-            self._monitor_timer.setInterval(interval * 1000)
+            self._monitor_timer.setInterval(interval * 1000)  # Convert to milliseconds
             self._monitor_timer.start()
 
             self.log_output.emit(
@@ -1443,7 +1509,8 @@ class NetworkTool(QObject):
 
         Calculate and emit changes in network traffic since monitoring began,
         offering glimpses into the frenetic dance of packets traversing our
-        digital nervous system.
+        digital nervous system - assuming, of course, that methods and integers
+        can agree on their fundamental nature.
         """
         try:
             # Refresh interface data
@@ -1464,10 +1531,26 @@ class NetworkTool(QObject):
                 rx_packets_delta = current_stats.get("rx_packets", 0) - self._initial_stats.get("rx_packets", 0)
                 tx_packets_delta = current_stats.get("tx_packets", 0) - self._initial_stats.get("tx_packets", 0)
 
-                # Convert to KB/s based on timer interval (in milliseconds)
-                interval_seconds = getattr(self._monitor_timer, 'interval', 5000) / 1000
-                rx_rate = rx_bytes_delta / (1024 * interval_seconds)  # KB/s
-                tx_rate = tx_bytes_delta / (1024 * interval_seconds)  # KB/s
+                # Get interval in seconds - fixing the type confusion between method and property
+                # A subtle reminder that in programming, as in life, identity matters
+                if hasattr(self, '_monitoring_interval'):
+                    # Use stored value if available
+                    interval_seconds = self._monitoring_interval
+                else:
+                    # Fallback with defensive retrieval of timer interval
+                    interval_seconds = 5  # Default to 5 seconds
+                    if hasattr(self, '_monitor_timer'):
+                        try:
+                            # Handle both callable method and property cases
+                            interval_ms = self._monitor_timer.interval() if callable(
+                                self._monitor_timer.interval) else self._monitor_timer.interval
+                            interval_seconds = interval_ms / 1000
+                        except Exception:
+                            self.logger.warning("Failed to get timer interval, using default")
+
+                # Convert to KB/s
+                rx_rate = rx_bytes_delta / (1024 * interval_seconds) if interval_seconds else 0  # KB/s
+                tx_rate = tx_bytes_delta / (1024 * interval_seconds) if interval_seconds else 0  # KB/s
 
                 # Create monitoring update
                 monitor_data = {

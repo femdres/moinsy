@@ -471,6 +471,25 @@ class MainWindow(QMainWindow):
             self.logger.error(f"Error showing command builder: {str(e)}")
             self.handle_error(f"Error showing command builder: {str(e)}")
 
+    def start_network_tool(self) -> None:
+        """Launch the network configuration tool.
+
+        Like a digital cartographer setting forth into the void of binary streams,
+        this method summons a window through which users can navigate the treacherous
+        terrain of network configurations.
+        """
+        try:
+            self.logger.debug("Opening network tool")
+            if hasattr(self, 'terminal'):
+                self.terminal.clear_terminal()
+            if hasattr(self, 'tools_manager'):
+                self.tools_manager.start_network_tool()
+            else:
+                self.logger.error("Tools manager not initialized")
+        except Exception as e:
+            self.logger.error(f"Error showing network tool: {str(e)}")
+            self.handle_error(f"Error showing network tool: {str(e)}")
+
     def log_to_terminal(self, message: str, color: str = "white") -> None:
         """Write a message to the terminal with optional color.
 

@@ -12,7 +12,8 @@ from PyQt6.QtWidgets import (
     QLabel, QFrame, QComboBox, QTabWidget, QWidget,
     QGridLayout, QScrollArea, QLineEdit, QSpinBox,
     QCheckBox, QMessageBox, QListWidget, QListWidgetItem,
-    QSplitter, QGroupBox, QRadioButton, QButtonGroup
+    QSplitter, QGroupBox, QRadioButton, QButtonGroup,
+    QTextEdit
 )
 from PyQt6.QtCore import Qt, pyqtSignal, QSize
 from PyQt6.QtGui import QFont, QIcon, QPixmap
@@ -44,6 +45,11 @@ class NetworkWindow(QDialog):
         super().__init__(parent)
         self.logger = logging.getLogger(__name__)
 
+        # Pre-initialize UI elements that might be accessed by event handlers
+        self.static_settings_group = None
+        self._monitoring_active = False
+        self._monitoring_data = []
+
         # Initialize the network tool
         self.network_tool = NetworkTool(self)
 
@@ -55,9 +61,6 @@ class NetworkWindow(QDialog):
 
         # Load network interfaces
         self.load_interfaces()
-
-        self._monitoring_active = False
-        self._monitoring_data = []
 
         self.logger.debug("Network window initialized")
 
@@ -78,7 +81,7 @@ class NetworkWindow(QDialog):
         try:
             # Window properties
             self.setWindowTitle("Network Configuration")
-            self.setMinimumSize(1000, 700)
+            self.setMinimumSize(1500, 1000)
 
             # Main layout
             main_layout = QVBoxLayout(self)
@@ -1079,10 +1082,15 @@ class NetworkWindow(QDialog):
         self.append_log(prompt, "yellow")
 
     def update_networks_list(self, networks: List[Dict[str, Any]]) -> None:
-        """Update the list of wireless networks.
+        """Update the list of wireless networks with proper type awareness.
 
         Args:
             networks: List of wireless network information dictionaries
+
+        Like an interpreter mediating between incompatible yet equally valid
+        worldviews, this method translates the diversity of network data types
+        into a harmonious display, neither judging nor excluding based on
+        representational differences.
         """
         try:
             # Clear the list
@@ -1091,14 +1099,25 @@ class NetworkWindow(QDialog):
             if not networks:
                 return
 
-            # Add each network to the list
+            # Add each network to the list, with careful type handling
             for network in networks:
                 ssid = network.get("ssid", "Unknown Network")
-                signal = network.get("signal", 0)
+
+                # The existential crux of our problem: signal might be string or int
+                signal_raw = network.get("signal", 0)
+                # Convert to int if it's a string, providing a unified ontology
+                if isinstance(signal_raw, str) and signal_raw.isdigit():
+                    signal = int(signal_raw)
+                elif isinstance(signal_raw, (int, float)):
+                    signal = int(signal_raw)
+                else:
+                    # If all else fails, default to 0 - the void of connectivity
+                    signal = 0
+
                 security = network.get("security", "")
 
                 # Format for display - Unicode signal bars by signal strength
-                signal_bars = self.network_tool._signal_strength_bars(signal)
+                signal_bars = self._signal_strength_bars(signal)
 
                 # Create list item
                 item = QListWidgetItem(f"{ssid} - {signal_bars} {security}")
@@ -1190,11 +1209,16 @@ class NetworkWindow(QDialog):
 
     def on_ip_mode_changed(self) -> None:
         """Handle IP configuration mode change."""
+        # First confirm that the static_settings_group exists
+        if not hasattr(self, 'static_settings_group') or self.static_settings_group is None:
+            self.logger.warning("Static settings group not initialized, cannot update visibility")
+            return
+
         # Show/hide static IP settings based on mode
         self.static_settings_group.setVisible(self.mode_static.isChecked())
 
         # If DHCP mode is selected, offer to apply DHCP immediately
-        if self.mode_dhcp.isChecked():
+        if hasattr(self, 'mode_dhcp') and self.mode_dhcp.isChecked():
             # Ask user if they want to apply DHCP now
             reply = QMessageBox.question(
                 self,
