@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <!-- Background Circle -->
+  <circle cx="100" cy="100" r="90" fill="#2d2e32" />
+  <circle cx="100" cy="100" r="85" fill="#1a1b1e" />
+
+  <!-- Modular Shapes - representing installation modules -->
+  <g id="modules" fill="#4CAF50">
+    <!-- Left module -->
+    <rect x="55" y="65" width="30" height="30" rx="5" />
+
+    <!-- Right Modules - stacked to show modularity -->
+    <rect x="115" y="65" width="30" height="30" rx="5" />
+    <rect x="115" y="105" width="30" height="30" rx="5" opacity="0.85" />
+
+    <!-- Bottom module -->
+    <rect x="55" y="105" width="30" height="30" rx="5" opacity="0.85" />
+
+    <!-- Center connection piece - representing the 'i' in Moinsy and connecting modules -->
+    <rect x="95" y="65" width="10" height="70" rx="5" />
+
+    <!-- Horizontal connectors -->
+    <rect x="85" y="80" width="30" height="5" rx="2.5" />
+    <rect x="85" y="115" width="30" height="5" rx="2.5" />
+  </g>
+
+  <!-- Subtle Linux reference - Small penguin silhouette -->
+  <path d="M100,45 C97,39 94,38 91,38 C88,38 84,39 83,44 C82,49 82,52 85,54 C88,56 94,54 95,49 C96,44 95,48 100,45 Z" fill="#2196F3" />
+
+  <!-- Circular Orbit - representing system integration -->
+  <circle cx="100" cy="100" r="75" fill="none" stroke="#2196F3" stroke-width="1.5" stroke-dasharray="5,8" opacity="0.7" />
+</svg>

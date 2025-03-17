@@ -378,7 +378,7 @@ class CommandBuilder(QDialog):
         """Load commands data from JSON file"""
         try:
             json_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
-                                     "core", "tools", "resources", "commands.json")
+                                     "resources", "data", "commands.json")
             with open(json_path, 'r') as f:
                 return json.load(f)
         except Exception as e:

@@ -25,19 +25,8 @@ def setup_commands_directory(logger: Optional[logging.Logger] = None) -> str:
     # Get base directory (src directory)
     base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-    # Create path to resources directory
-    resources_dir = os.path.join(base_dir, "core", "tools", "resources")
-
-    # Create directories if they don't exist
-    try:
-        os.makedirs(resources_dir, exist_ok=True)
-        logger.debug(f"Ensured resources directory exists: {resources_dir}")
-    except Exception as e:
-        logger.error(f"Failed to create resources directory: {str(e)}")
-        raise
-
     # Path to commands.json
-    commands_json_path = os.path.join(resources_dir, "commands.json")
+    commands_json_path = os.path.join(base_dir, "resources", "data", "commands.json")
 
     # Check if file already exists
     if not os.path.exists(commands_json_path):

@@ -59,7 +59,7 @@ class Theme:
 
     # Font Configuration
     FONTS = {
-        'LOGO': ('JetBrains Mono', 24, 'Bold'),
+        'LOGO': ('JetBrains Mono', 28, 'Bold'),
         'TITLE': ('Segoe UI', 16, 'Bold'),
         'SUBTITLE': ('Segoe UI', 14, 'Normal'),
         'BODY': ('Segoe UI', 13, 'Normal'),

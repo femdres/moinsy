@@ -99,8 +99,8 @@ class TerminalArea(QWidget):
 
             # Header layout
             self.header_layout = QHBoxLayout(header)
-            self.header_layout.setContentsMargins(15, 15, 15, 0)
-            self.header_layout.setSpacing(10)
+            self.header_layout.setContentsMargins(5, 5, 5, 5)
+            self.header_layout.setSpacing(5)
 
             # Title
             title = QLabel("Terminal Output")
@@ -310,7 +310,7 @@ class TerminalArea(QWidget):
             if title:
                 title.setStyleSheet(f"""
                     QLabel#TerminalTitle {{
-                        color: {Theme.get_color('TEXT_PRIMARY')};
+                        color: {Theme.get_color('PRIMARY')};
                         background-color: transparent;
                         font-size: 14px;
                         font-weight: bold;
@@ -323,7 +323,7 @@ class TerminalArea(QWidget):
                 clear_button.setStyleSheet(f"""
                     QPushButton#ClearButton {{
                         background-color: {Theme.get_color('TERMINAL_BG')};
-                        color: {Theme.get_color('TEXT_PRIMARY')};
+                        color: {Theme.get_color('PRIMARY')};
                         border: none;
                         border-radius: 6px;
                         padding: 5px 10px;
