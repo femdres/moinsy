@@ -288,50 +288,6 @@ class Sidebar(QWidget):
             progress_layout.setSpacing(10)
             progress_layout.setContentsMargins(15, 15, 15, 15)
 
-            # Create header with icon and label
-            header_layout = QHBoxLayout()
-            header_layout.setSpacing(8)
-
-            # Create icon
-            icon_label = QLabel()
-            icon_label.setObjectName("ProgressIcon")
-            icon_label.setFixedSize(16, 16)
-            icon_label.setStyleSheet(f"""
-                QLabel#ProgressIcon {{
-                    background-color: {Theme.get_color('PRIMARY')};
-                    border-radius: 8px;
-                }}
-            """)
-            header_layout.addWidget(icon_label)
-
-            # Header for progress section
-            header = QLabel("System Progress")
-            header.setObjectName("ProgressHeader")
-            header.setStyleSheet(f"""
-                QLabel#ProgressHeader {{
-                    color: {Theme.get_color('TEXT_PRIMARY')};
-                    font-size: 14px;
-                    font-weight: bold;
-                }}
-            """)
-            header_layout.addWidget(header)
-            header_layout.addStretch()
-
-            progress_layout.addLayout(header_layout)
-
-            # Progress percentage display
-            self.progress_percentage = QLabel("0%")
-            self.progress_percentage.setObjectName("ProgressPercentage")
-            self.progress_percentage.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            self.progress_percentage.setStyleSheet(f"""
-                QLabel#ProgressPercentage {{
-                    color: {Theme.get_color('PRIMARY')};
-                    font-size: 24px;
-                    font-weight: bold;
-                }}
-            """)
-            progress_layout.addWidget(self.progress_percentage)
-
             # Progress bar for visual indicator
             self.progress_bar = QProgressBar()
             self.progress_bar.setObjectName("ProgressBar")
@@ -700,16 +656,6 @@ class Sidebar(QWidget):
                     }}
                 """)
 
-            # Style progress percentage
-            if hasattr(self, 'progress_percentage'):
-                self.progress_percentage.setStyleSheet(f"""
-                    QLabel#ProgressPercentage {{
-                        color: {Theme.get_color('PRIMARY')};
-                        font-size: 24px;
-                        font-weight: bold;
-                    }}
-                """)
-
             # Style progress bar
             if hasattr(self, 'progress_bar'):
                 self.progress_bar.setStyleSheet(f"""
@@ -747,7 +693,6 @@ class Sidebar(QWidget):
         """
         try:
             # Update percentage display
-            self.progress_percentage.setText(f"{value}%")
             self.progress_bar.setValue(value)
 
             # Update status message if provided

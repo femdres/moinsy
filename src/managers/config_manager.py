@@ -54,7 +54,7 @@ class ConfigManager:
                 "terminal_buffer_size": 1000,
                 "window_size": {
                     "width": 1000,
-                    "height": 800
+                    "height": 750
                 },
                 "sidebar_width": 275,
                 "colored_buttons": True

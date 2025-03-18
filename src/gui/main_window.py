@@ -125,7 +125,7 @@ class MainWindow(QMainWindow):
                 self.logger.warning(f"Icon not found at {icon_path}")
 
             # Default size will be overridden by settings later
-            self.setMinimumSize(1000, 800)
+            self.setMinimumSize(1000, 750)
             self.setWindowState(Qt.WindowState.WindowActive)
             self.logger.debug("Window properties configured")
         except Exception as e:

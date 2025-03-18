@@ -158,8 +158,8 @@ class NetworkWindow(QDialog):
             right_panel = self.create_right_panel()
             splitter.addWidget(right_panel)
 
-            # Set initial sizes - left panel smaller
-            splitter.setSizes([300, 700])
+            # Set initial sizes - panels same size
+            splitter.setSizes([500, 500])
 
             main_layout.addWidget(splitter, 1)
 
