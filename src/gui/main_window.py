@@ -130,7 +130,6 @@ class MainWindow(QMainWindow):
             self.logger.debug("Window properties configured")
         except Exception as e:
             self.logger.error(f"Failed to setup window properties: {str(e)}")
-            # Continue with default window settings
 
     def setup_layout(self) -> None:
         """Setup the main application layout.
@@ -489,6 +488,180 @@ class MainWindow(QMainWindow):
         except Exception as e:
             self.logger.error(f"Error showing network tool: {str(e)}")
             self.handle_error(f"Error showing network tool: {str(e)}")
+
+    def start_system_update(self) -> None:
+        """
+        Initiate system update process across multiple package managers.
+
+        Like Prometheus bringing fire to humanity only to find they're using it
+        to run outdated software, this method initiates the Sisyphean task of
+        updating system packages - a background process of entropic defiance that
+        will inevitably need to be repeated tomorrow.
+        """
+        try:
+            self.logger.info("Initiating system update process")
+
+            # Clear terminal output for fresh update logs
+            if hasattr(self, 'terminal'):
+                self.terminal.clear_terminal()
+                self.log_to_terminal("Preparing system update process...", color="#4CAF50")
+                self.log_to_terminal("This process may take several minutes depending on available updates.",
+                                     color="#FFC107")
+
+            # Get configuration settings
+            perform_cleanup = self.config_manager.get_setting("tools", "update_perform_cleanup", True)
+
+            # Initialize the updater if not already done
+            if not hasattr(self, '_system_updater'):
+                from core.tools.update_tool import SystemUpdater
+                self._system_updater = SystemUpdater(self)
+
+                # Connect signals for UI communication
+                self._system_updater.log_output.connect(lambda msg: self.log_to_terminal(msg, "white"))
+                self._system_updater.update_progress.connect(self._handle_update_progress)
+                self._system_updater.error_occurred.connect(self._handle_update_error)
+                self._system_updater.update_complete.connect(self._handle_update_complete)
+
+                self.logger.debug("System updater initialized")
+
+            # Update UI to reflect process start
+            if hasattr(self, 'sidebar'):
+                self.sidebar.update_progress(0, "Starting update...")
+
+            # Start asynchronous update process - a hopeful battle against software entropy
+            QTimer.singleShot(100, lambda: self._system_updater.start_update(clean_after=perform_cleanup))
+
+            self.logger.debug("System update process queued for execution")
+
+        except Exception as e:
+            error_msg = f"Failed to initiate system update: {str(e)}"
+            self.logger.exception(error_msg)
+            self.handle_error(error_msg)
+
+            # Reset progress bar in case of failure
+            if hasattr(self, 'sidebar'):
+                self.sidebar.update_progress(0, "Update failed")
+
+    def _handle_update_progress(self, value: int) -> None:
+        """
+        Handle progress updates from the system updater.
+
+        Args:
+            value: Progress percentage (0-100)
+
+        Like a digital hourglass tracking the temporal cost of our update ritual,
+        this method visualizes the glacial march toward the asymptotic goal
+        of an up-to-date system.
+        """
+        try:
+            # Update progress bar with formatted status message
+            status = None
+            if value == 0:
+                status = "Preparing..."
+            elif value == 100:
+                status = "Complete"
+            elif value < 20:
+                status = "Checking packages..."
+            elif value < 50:
+                status = "Updating system packages..."
+            elif value < 80:
+                status = "Updating applications..."
+            elif value < 95:
+                status = "Cleaning up..."
+
+            # Update UI components
+            if hasattr(self, 'sidebar'):
+                self.sidebar.update_progress(value, status)
+
+        except Exception as e:
+            # Log but continue - progress display is non-critical
+            self.logger.error(f"Error handling update progress: {str(e)}")
+
+    def _handle_update_error(self, error_message: str) -> None:
+        """
+        Handle error notifications from the system updater.
+
+        Args:
+            error_message: Error message to display
+
+        Like a digital therapist processing the existential failures of our update
+        process, this method acknowledges the error while maintaining a calm facade -
+        knowing that in the grand cosmic scale, package manager errors are but
+        tiny ripples in the void.
+        """
+        try:
+            # Log the error with high visibility in terminal
+            self.log_to_terminal(f"⚠️ {error_message}", color="#FF5252")
+
+            # Log to application logger
+            self.logger.error(f"System update error: {error_message}")
+
+            # Update sidebar status if this is a terminal error
+            # (Non-terminal errors are handled by the updater and will continue)
+            if "Failed to initiate" in error_message:
+                if hasattr(self, 'sidebar'):
+                    self.sidebar.update_progress(0, "Update failed")
+
+        except Exception as e:
+            # Meta-error: error in error handling - a special circle of programmer hell
+            self.logger.critical(f"Error in error handler: {str(e)}")
+            print(f"ERROR: {error_message}")  # Last resort output
+
+    def _handle_update_complete(self, summary: Dict[str, Any]) -> None:
+        """
+        Handle update completion notification with summary statistics.
+
+        Args:
+            summary: Dictionary containing update statistics
+
+        Like an historian documenting the conclusion of another battle against
+        software decay, this method processes the aftermath of our update campaign -
+        cataloging victories, defeats, and casualties for the digital archaeological record.
+        """
+        try:
+            # Extract key metrics
+            succeeded = summary.get('succeeded', 0)
+            failed = summary.get('failed', 0)
+            total = summary.get('total_updates', 0)
+            duration_seconds = summary.get('duration_seconds', 0)
+
+            # Format duration for display
+            minutes, seconds = divmod(int(duration_seconds), 60)
+            duration_str = f"{minutes}m {seconds}s" if minutes > 0 else f"{seconds}s"
+
+            # No need to add more messages here - the SystemUpdater has already
+            # provided user-friendly summary messages
+
+            # Just log a single completion message with appropriate color for emphasis
+            if failed == 0 and total > 0:
+                self.log_to_terminal(
+                    f"\nYour system is now up to date.",
+                    color="#4CAF50"  # Green for success
+                )
+            elif failed > 0:
+                # Let the user know they might want to try again later
+                self.log_to_terminal(
+                    f"\nSome updates couldn't be completed. You may want to try again later.",
+                    color="#FFC107"  # Yellow for partial success
+                )
+
+            # Update sidebar to completion state with simple message
+            if hasattr(self, 'sidebar'):
+                if failed > 0 and total > 0:
+                    percent_complete = int((succeeded / total) * 100)
+                    self.sidebar.update_progress(100, f"Updated {percent_complete}%")
+                else:
+                    self.sidebar.update_progress(100, "Update complete")
+
+            # Log detailed completion to application logger (not visible to users)
+            self.logger.info(
+                f"System update completed: {succeeded}/{total} packages updated successfully in {duration_str}")
+
+        except Exception as e:
+            self.logger.error(f"Error handling update completion: {str(e)}")
+            # Ensure progress shows completion despite error in summary handling
+            if hasattr(self, 'sidebar'):
+                self.sidebar.update_progress(100, "Update complete")
 
     def log_to_terminal(self, message: str, color: str = "white") -> None:
         """Write a message to the terminal with optional color.
