@@ -82,8 +82,8 @@ class SystemToolsWindow(QDialog):
         tools = [
             ("System Update", "Update system packages and applications", "#4CAF50",
              lambda: self.launch_tool(self.start_system_update)),
-            ("Disk Cleanup", "Remove temporary and unused files", "#2196F3",
-             lambda: self.launch_tool(None)),
+            ("Disk Cleanup", "Remove temporary and unused files to free up space", "#2196F3",
+             lambda: self.launch_tool(self.start_disk_cleanup)),
             ("Network Tools", "Network diagnostics and configuration", "#9C27B0",
              lambda: self.launch_tool(self.start_network_tool)),
             ("Service Manager", "Manage system services", "#FF9800",
@@ -243,6 +243,19 @@ class SystemToolsWindow(QDialog):
             self.parent_window.start_service_manager()
         else:
             self.logger.error("Parent window doesn't have start_service_manager method")
+
+    def start_disk_cleanup(self) -> None:
+        """Start the disk cleanup tool.
+
+        Like a digital waste management technician commanding a fleet of
+        binary garbage trucks, this method initiates the process of purging
+        the filesystem of computational refuse - temporary files, log rollovers,
+        and cached data that clutters our digital existence.
+        """
+        if hasattr(self.parent_window, 'start_disk_cleanup'):
+            self.parent_window.start_disk_cleanup()
+        else:
+            self.logger.error("Parent window doesn't have start_disk_cleanup method")
 
     def start_network_tool(self):
         """Launch the network configuration tool.

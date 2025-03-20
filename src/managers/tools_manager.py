@@ -6,6 +6,7 @@ from typing import Optional, Dict, Any, List, Union, cast
 from managers.config_manager import ConfigManager
 from gui.components.settings.settings_window import SettingsWindow
 from gui.components.network_window import NetworkWindow
+from gui.components.disk_cleanup_window import DiskCleanupWindow
 
 
 class ToolsManager(QObject):
@@ -154,6 +155,44 @@ class ToolsManager(QObject):
             self.log_output.emit("Network configuration session completed.", "white")
         except Exception as e:
             error_msg = f"Failed to launch network configuration tool: {str(e)}"
+            self.logger.error(error_msg)
+            self.error_occurred.emit(error_msg)
+            self.update_progress.emit(0, "Error")
+
+    def start_disk_cleanup(self):
+        """Initialize and launch the disk cleanup tool.
+
+        Like a digital waste management technician surveying the accumulated
+        entropy of file systems, this method summons a window through which
+        users may reclaim space from the digital detritus of computations past.
+        """
+        self.log_output.emit("Launching Disk Cleanup Tool...", "white")
+        self.update_progress.emit(10, "Initializing")
+
+        try:
+            cleanup_window = DiskCleanupWindow(self.parent())
+            cleanup_window.setStyleSheet("""
+                QDialog {
+                    background-color: #1a1b1e;
+                }
+            """)
+
+            # Apply window settings
+            window_size = self.config_manager.get_setting(
+                "general", "window_size", {"width": 1000, "height": 800}
+            )
+            if window_size:
+                # Use slightly smaller size than main window
+                width = int(window_size.get("width", 1000) * 0.9)
+                height = int(window_size.get("height", 800) * 0.9)
+                cleanup_window.resize(width, height)
+
+            self.update_progress.emit(100, "Ready")
+            cleanup_window.exec()
+
+            self.log_output.emit("Disk cleanup session completed.", "white")
+        except Exception as e:
+            error_msg = f"Failed to launch disk cleanup tool: {str(e)}"
             self.logger.error(error_msg)
             self.error_occurred.emit(error_msg)
             self.update_progress.emit(0, "Error")

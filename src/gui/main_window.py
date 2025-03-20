@@ -470,6 +470,104 @@ class MainWindow(QMainWindow):
             self.logger.error(f"Error showing command builder: {str(e)}")
             self.handle_error(f"Error showing command builder: {str(e)}")
 
+    def start_disk_cleanup(self) -> None:
+        """
+        Launch the disk cleanup tool.
+
+        Like a meticulous archaeologist excavating the fossilized remnants of
+        past computations, this method initiates the systematic purging of
+        the digital detritus that accumulates in the silicon strata of our
+        storage media - a futile rebellion against the inevitable entropic
+        march toward disorder.
+        """
+        try:
+            self.logger.info("Initiating disk cleanup tool")
+
+            # Clear terminal for fresh output
+            if hasattr(self, 'terminal'):
+                self.terminal.clear_terminal()
+                self.log_to_terminal("Preparing disk cleanup tool...", color="#4CAF50")
+                self.log_to_terminal(
+                    "This tool will help you identify and remove unnecessary files to free up disk space.",
+                    color="#FFC107")
+
+            # Update UI to reflect process start
+            if hasattr(self, 'sidebar'):
+                self.sidebar.update_progress(0, "Starting disk cleanup...")
+
+            # Launch the disk cleanup tool via the tools manager
+            if hasattr(self, 'tools_manager'):
+                self.tools_manager.start_disk_cleanup()
+            else:
+                self.logger.error("Tools manager not initialized")
+                self.handle_error("Error: Tools manager not initialized")
+
+        except Exception as e:
+            error_msg = f"Failed to initiate disk cleanup: {str(e)}"
+            self.logger.exception(error_msg)
+            self.handle_error(error_msg)
+
+            # Reset progress bar in case of failure
+            if hasattr(self, 'sidebar'):
+                self.sidebar.update_progress(0, "Disk cleanup failed")
+
+    def start_service_manager(self) -> None:
+        """
+        Initiate service manager interface for controlling system services.
+
+        Like a digital orchestra conductor stepping onto the podium, this method
+        summons forth the service manager - an illusory control panel that gives
+        users the comforting fiction that the chaotic symphony of system processes
+        will actually yield to their commands, when in truth these services
+        follow their own inscrutable logic despite our best intentions.
+        """
+        try:
+            self.logger.info("Initiating service manager interface")
+
+            # Clear terminal output for fresh service logs
+            if hasattr(self, 'terminal'):
+                self.terminal.clear_terminal()
+                self.log_to_terminal("Initializing Service Manager...", color="#4CAF50")
+                self.log_to_terminal(
+                    "This interface allows you to manage system services - start, stop, and monitor the digital entities that form the backbone of your system.",
+                    color="#FFFFFF"
+                )
+
+            # Update UI to reflect process start
+            if hasattr(self, 'sidebar'):
+                self.sidebar.update_progress(0, "Initializing...")
+
+            # Ensure tools manager is available
+            if not hasattr(self, 'tools_manager'):
+                error_msg = "Tools manager not initialized, cannot start service manager"
+                self.logger.error(error_msg)
+                self.handle_error(error_msg)
+                return
+
+            # Get setting for showing all services or just active ones
+            show_all_services = self.config_manager.get_setting("tools", "service_manager_show_all", False)
+
+            # Display notice about service management requiring privilege escalation
+            self.log_to_terminal(
+                "Note: Most service management operations require administrative privileges. You may be prompted for authentication.",
+                color="#FFC107"
+            )
+
+            # Start the service manager through the tools manager
+            # This will trigger the service listing and interactive flow
+            self.tools_manager.start_service_manager(show_all_services)
+
+            self.logger.debug("Service manager interface initiated")
+
+        except Exception as e:
+            error_msg = f"Failed to start service manager: {str(e)}"
+            self.logger.exception(error_msg)
+            self.handle_error(error_msg)
+
+            # Reset progress bar in case of failure
+            if hasattr(self, 'sidebar'):
+                self.sidebar.update_progress(0, "Failed")
+
     def start_network_tool(self) -> None:
         """Launch the network configuration tool.
 
