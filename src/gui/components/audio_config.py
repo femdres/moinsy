@@ -784,63 +784,56 @@ class PipeWireConfigWindow(QDialog):
             self.status_label.setText(f"Error: {error_msg}")
 
     def _process_device_info(self, device_id: str, device_info: Dict[str, str]) -> None:
-        """Process and categorize a detected audio device.
-
-        Args:
-            device_id: Device identifier
-            device_info: Dictionary of device properties
-
-        Like a meticulous customs agent sorting entities at the border between
-        digital and physical realms, this method examines each device's
-        properties to determine its nature and classification.
-        """
+        """Process and categorize a detected audio device."""
         try:
             # Extract key device properties
             node_name = device_info.get('node.name', '')
             media_class = device_info.get('media.class', '')
             node_nick = device_info.get('node.nick', '')
 
+            # Add this debugging line here
+            self.logger.debug(
+                f"Device properties: id={device_id}, name={node_name}, class={media_class}, nick={node_nick}")
+
             # Skip internal monitoring and non-audio devices
             if ('monitor' in node_name.lower() or
-                not media_class or
-                not node_name or
-                'Stream' in node_name or
-                'Proxy' in node_name):
+                    not media_class or
+                    not node_name or
+                    'Stream' in node_name or
+                    'Proxy' in node_name):
                 return
 
-            # Determine if this is an input or output device
-            is_output = 'Sink' in node_name or 'Output' in media_class or 'Audio/Sink' in media_class
-            is_input = 'Source' in node_name or 'Input' in media_class or 'Audio/Source' in media_class
+            # More robust detection of output/input nature
+            is_output = any(x in media_class for x in ['Sink', 'Output', 'Audio/Sink']) or \
+                        any(x in node_name for x in ['sink', 'output', 'playback'])
 
-            # Skip if not clearly input or output
-            if not is_input and not is_output:
-                return
+            is_input = any(x in media_class for x in ['Source', 'Input', 'Audio/Source']) or \
+                       any(x in node_name for x in ['source', 'input', 'capture'])
 
             # Use node.nick as display name if available, otherwise use node.name
             display_name = node_nick if node_nick else node_name
 
-            # Create a device config item
+            # If neither output nor input was detected but we have a media.class,
+            # make a best guess based on common patterns
+            if not (is_output or is_input) and media_class:
+                if 'Audio' in media_class:
+                    # Default assumption for Audio class with no other indicators
+                    is_output = True  # More likely to be an output in this case
+                    self.logger.debug(
+                        f"Assuming device {display_name} is an output based on media.class: {media_class}")
+
+            # Skip if still not clearly input or output
+            if not is_input and not is_output:
+                self.logger.debug(f"Skipping device {display_name} - could not determine if input or output")
+                return
+
+            # Create device config item
             device = DeviceConfigItem(
                 name=node_name,
                 nick=display_name,
                 device_id=device_id,
                 is_output=is_output
             )
-
-            # Generate a filename for this device
-            safe_name = ''.join(c if c.isalnum() else '_' for c in display_name).lower()
-            device.config['filename'] = f"51-{safe_name}.lua"
-
-            # Add to the appropriate device list
-            if is_output:
-                self.output_devices.append(device_id)
-                self._add_device_to_tree(self.output_tree, device)
-            elif is_input:
-                self.input_devices.append(device_id)
-                self._add_device_to_tree(self.input_tree, device)
-
-            # Add to devices dictionary
-            self.devices[device_id] = device
 
         except Exception as e:
             self.logger.error(f"Error processing device {device_id}: {str(e)}")
