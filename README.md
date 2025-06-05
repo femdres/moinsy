@@ -27,8 +27,6 @@ Moinsy is a modern, modular installation and system management utility for Linux
 
 ## Screenshots
 
-*[Add screenshots of the main interface, installation panel, and system tools here]*
-
 ## Requirements
 
 - A Debian-based Linux distribution (Ubuntu, Linux Mint, etc.)
@@ -117,40 +115,6 @@ Configure Moinsy's appearance and behavior through the Settings panel, including
 
 ## Development
 
-### Project Structure
-
-```
-moinsy/
-├── src/                    # Main source code
-│   ├── core/               # Core functionality
-│   │   ├── command/        # Command execution and parsing
-│   │   ├── installers/     # Installation modules
-│   │   │   ├── programs.py # Programs installer
-│   │   │   └── pipewire.py # PipeWire installer
-│   │   └── tools/          # System tools implementations
-│   │       ├── service_manager.py
-│   │       ├── update_tool.py
-│   │       └── hardware_monitor.py
-│   ├── gui/                # User interface components
-│   │   ├── components/     # UI widgets and dialogs
-│   │   │   ├── sidebar.py
-│   │   │   ├── terminal.py
-│   │   │   ├── command_builder.py
-│   │   │   └── settings/   # Settings components
-│   │   └── styles/         # Theme and styling
-│   ├── managers/           # System managers
-│   │   ├── config_manager.py
-│   │   ├── installation_manager.py
-│   │   └── tools_manager.py
-│   ├── resources/          # Application resources
-│   │   ├── icons/
-│   │   └── configs/
-│   └── utils/              # Utility functions
-├── configure.sh            # Installation script
-├── dev_configure.sh        # Development setup script
-└── requirements.py         # Python dependencies
-```
-
 ### Setting Up Development Environment
 
 1. Clone the repository to the installation location:
@@ -228,5 +192,4 @@ This project is licensed under the GNU General Public License v3.0 - see the LIC
 ## Acknowledgments
 
 - Created by femdres
-- Thanks to the PyQt6 project for the GUI framework
 - Inspired by the need for simplified system management on Linux
