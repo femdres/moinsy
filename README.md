@@ -1,5 +1,7 @@
 # Moinsy - Modular Installation System
 
+![showcase](homepage.png)
+
 Moinsy is a modern, modular installation and system management utility for Linux. It provides a clean, intuitive interface for common system tasks, software installation, and configuration management in a unified dashboard.
 
 ## Features
@@ -24,8 +26,6 @@ Moinsy is a modern, modular installation and system management utility for Linux
 - **Comprehensive Help**: Built-in documentation for all features
 
 ## Screenshots
-
-![showcase](homepage.png)
 
 ![authentication showcase](authenticationpolicy.png)
 
