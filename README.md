@@ -25,6 +25,12 @@ Moinsy is a modern, modular installation and system management utility for Linux
 
 ## Screenshots
 
+![showcase](homepage.png)
+
+![authentication showcase](authenticationpolicy.png)
+
+Moinsy uses a PolKit authentication policy to borrow your password from the system securely until the application is closed.
+
 ## Requirements
 
 - A Debian-based Linux distribution (Ubuntu, Linux Mint, etc.)
@@ -76,6 +82,8 @@ You can start Moinsy from your application menu or by running:
 
 #### Software Installation
 
+![installation showcase](installations.png)
+
 1. Click the "Installations" button in the sidebar
 2. Select from available installation options:
    - **Programs**: Install multiple applications from a curated list
@@ -87,6 +95,8 @@ You can start Moinsy from your application menu or by running:
 
 #### System Tools
 
+![tools showcase](tools.png)
+
 1. Click the "System Tools" button in the sidebar
 2. Select a tool to use:
    - **System Update**: Update your system packages and applications
@@ -96,6 +106,8 @@ You can start Moinsy from your application menu or by running:
    - **Network Tools**: Diagnose and configure network settings (coming soon)
 
 #### Command Builder
+
+![command builder showcase](commandbuilder.png)
 
 The Command Builder helps you learn and create Linux command sequences with proper syntax and options. It includes:
 - Command categories organized by function
@@ -139,15 +151,6 @@ Configure Moinsy's appearance and behavior through the Settings panel, including
    ```
 
 Note: Some features requiring system privileges may not work correctly without running as root.
-
-### Development Guidelines
-
-1. Use type hints for all function parameters and return values
-2. Include detailed docstrings for classes and methods
-3. Log all significant operations and errors
-4. Handle exceptions appropriately at each level
-5. Follow PEP 8 style guidelines
-6. Run tests before submitting pull requests
 
 ## Troubleshooting
 
